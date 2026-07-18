@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu Ristorante</title>
+  <meta http-equiv="refresh" content="0; url=menu.pdf">
+  <style>
+    body {
+      font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #faf7f2;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 1.4em;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    a.bottone {
+      display: inline-block;
+      background-color: #c0392b;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 1.1em;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    p.note {
+      margin-top: 20px;
+      color: #777;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Stiamo aprendo il menu...</h1>
+  <a class="bottone" href="menu.pdf">Apri il Menu (PDF)</a>
+  <p class="note">Se il menu non si apre automaticamente, tocca il pulsante qui sopra.</p>
+
+  <script>
+    window.location.replace("menu.pdf");
+  </script>
+</body>
+</html>
