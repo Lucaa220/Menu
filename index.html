@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menu Ristorante</title>
-  <meta http-equiv="refresh" content="0; url=menu.pdf">
   <style>
     body {
       font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -22,32 +21,61 @@
     h1 {
       font-size: 1.4em;
       color: #333;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .bottoni {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 320px;
     }
     a.bottone {
-      display: inline-block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       background-color: #c0392b;
       color: #ffffff;
       text-decoration: none;
       font-size: 1.1em;
-      padding: 14px 28px;
+      padding: 16px 28px;
       border-radius: 8px;
       font-weight: bold;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    a.bottone:hover {
+      background-color: #a93226;
+    }
+    a.bottone:active {
+      transform: scale(0.98);
+    }
+    a.bottone.secondario {
+      background-color: #2c3e50;
+    }
+    a.bottone.secondario:hover {
+      background-color: #1f2c38;
+    }
+    .bandiera {
+      font-size: 1.3em;
     }
     p.note {
-      margin-top: 20px;
+      margin-top: 24px;
       color: #777;
       font-size: 0.9em;
     }
   </style>
 </head>
 <body>
-  <h1>Stiamo aprendo il menu...</h1>
-  <a class="bottone" href="menu.pdf">Apri il Menu (PDF)</a>
-  <p class="note">Se il menu non si apre automaticamente, tocca il pulsante qui sopra.</p>
-
-  <script>
-    window.location.replace("menu.pdf");
-  </script>
+  <h1>Scegli la lingua del menu<br>Choose your menu language</h1>
+  <div class="bottoni">
+    <a class="bottone" href="menu.pdf">
+      <span class="bandiera">🇮🇹</span> Menu in Italiano
+    </a>
+    <a class="bottone secondario" href="menu-en.pdf">
+      <span class="bandiera">🇬🇧</span> Menu in English
+    </a>
+  </div>
+  <p class="note">Tocca un pulsante per aprire il PDF del menu</p>
 </body>
 </html>
