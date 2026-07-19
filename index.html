@@ -3,80 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trattoria da Franca</title>
+  <title>Trattoria da Franca - Menu</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       margin: 0;
-      background-color: #faf7f2;
+      background-color: #3a1e1e;
+      color: #f7efe4;
       text-align: center;
-      padding: 20px;
+      padding: 30px 20px;
     }
-    h1 {
-      font-size: 1.4em;
-      color: #333;
-      margin-bottom: 30px;
-    }
+
     .schermata {
       display: none;
       flex-direction: column;
       align-items: center;
       width: 100%;
+      max-width: 380px;
     }
-    .schermata.attiva {
-      display: flex;
+    .schermata.attiva { display: flex; }
+
+    .tagline {
+      font-family: 'Brush Script MT', 'Segoe Script', cursive;
+      font-size: 1.6em;
+      color: #f7efe4;
+      opacity: 0.9;
+      margin-bottom: -8px;
     }
+
+    h1.logo {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 3em;
+      letter-spacing: 1px;
+      color: #ffffff;
+      margin: 0 0 10px 0;
+      text-transform: uppercase;
+    }
+
+    h2.titolo {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-weight: 900;
+      font-size: 1.6em;
+      color: #ffffff;
+      margin: 0 0 30px 0;
+    }
+
+    .sottotitolo {
+      font-size: 1.15em;
+      color: #f7efe4;
+      margin-bottom: 34px;
+      line-height: 1.5;
+    }
+
+    .separatore {
+      width: 60px;
+      height: 3px;
+      background-color: #f7efe4;
+      opacity: 0.6;
+      border-radius: 2px;
+      margin: 0 0 30px 0;
+    }
+
     .bottoni {
       display: flex;
       flex-direction: column;
       gap: 16px;
       width: 100%;
-      max-width: 320px;
     }
+
     a.bottone, button.bottone {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      background-color: #c0392b;
-      color: #ffffff;
+      gap: 12px;
+      background-color: #f7efe4;
+      color: #3a1e1e;
       text-decoration: none;
       font-size: 1.1em;
-      padding: 16px 28px;
+      font-weight: 700;
+      padding: 17px 28px;
       border: none;
-      border-radius: 8px;
-      font-weight: bold;
+      border-radius: 30px;
       font-family: inherit;
       cursor: pointer;
+      letter-spacing: 0.3px;
       transition: background-color 0.2s ease, transform 0.1s ease;
     }
-    a.bottone:hover, button.bottone:hover { background-color: #a93226; }
+    a.bottone:hover, button.bottone:hover { background-color: #ffffff; }
     a.bottone:active, button.bottone:active { transform: scale(0.98); }
-    button.bottone.secondario { background-color: #2c3e50; }
-    button.bottone.secondario:hover { background-color: #1f2c38; }
-    a.bottone.vini { background-color: #6d214f; }
-    a.bottone.vini:hover { background-color: #5a1a41; }
-    a.bottone.birre { background-color: #b8860b; }
-    a.bottone.birre:hover { background-color: #9a7009; }
+
+    button.bottone.secondario {
+      background-color: transparent;
+      color: #f7efe4;
+      border: 2px solid #f7efe4;
+    }
+    button.bottone.secondario:hover {
+      background-color: rgba(247, 239, 228, 0.1);
+    }
+
     .icona { font-size: 1.3em; }
+
     a.indietro {
-      margin-top: 30px;
-      color: #777;
+      margin-top: 34px;
+      color: #f7efe4;
+      opacity: 0.7;
       font-size: 0.9em;
       text-decoration: none;
       cursor: pointer;
     }
-    a.indietro:hover { text-decoration: underline; }
+    a.indietro:hover { opacity: 1; text-decoration: underline; }
+
     p.note {
-      margin-top: 24px;
-      color: #777;
-      font-size: 0.9em;
+      margin-top: 26px;
+      color: #f7efe4;
+      opacity: 0.6;
+      font-size: 0.85em;
     }
   </style>
 </head>
@@ -84,29 +133,32 @@
 
   <!-- SCHERMATA 1: scelta lingua -->
   <div id="schermata-lingua" class="schermata attiva">
-    <h1>Scegli la lingua del menu<br>Choose your menu language</h1>
+    <p class="tagline">Trattoria da Franca</p>
+    <h1 class="logo">Menu'</h1>
+    <div class="separatore"></div>
+    <p class="sottotitolo">Scegli la lingua del menu<br>Choose your menu language</p>
     <div class="bottoni">
       <button class="bottone" onclick="mostraCategoria('it')">
-        <span class="icona">🇮🇹</span> Menu in Italiano
+        <span class="icona">🇮🇹</span> Italiano
       </button>
       <button class="bottone secondario" onclick="mostraCategoria('en')">
-        <span class="icona">🇬🇧</span> Menu in English
+        <span class="icona">🇬🇧</span> English
       </button>
     </div>
-    <p class="note">Tocca un pulsante per scegliere la lingua</p>
   </div>
 
   <!-- SCHERMATA 2: scelta categoria - Italiano -->
   <div id="schermata-it" class="schermata">
-    <h1>Cosa vuoi consultare?</h1>
+    <p class="tagline">Trattoria da Franca</p>
+    <h2 class="titolo">Cosa vuoi consultare?</h2>
     <div class="bottoni">
       <a class="bottone" href="piatti-it.pdf">
         <span class="icona">🍽️</span> Piatti
       </a>
-      <a class="bottone vini" href="vini-it.pdf">
+      <a class="bottone" href="vini-it.pdf">
         <span class="icona">🍷</span> Lista dei Vini
       </a>
-      <a class="bottone birre" href="birre-it.pdf">
+      <a class="bottone" href="birre-it.pdf">
         <span class="icona">🍺</span> Birre in Bottiglia
       </a>
     </div>
@@ -115,15 +167,16 @@
 
   <!-- SCHERMATA 2: scelta categoria - English -->
   <div id="schermata-en" class="schermata">
-    <h1>What would you like to see?</h1>
+    <p class="tagline">Trattoria da Franca</p>
+    <h2 class="titolo">What would you like to see?</h2>
     <div class="bottoni">
       <a class="bottone" href="piatti-en.pdf">
         <span class="icona">🍽️</span> Dishes
       </a>
-      <a class="bottone vini" href="vini-en.pdf">
+      <a class="bottone" href="vini-en.pdf">
         <span class="icona">🍷</span> Wine List
       </a>
-      <a class="bottone birre" href="birre-en.pdf">
+      <a class="bottone" href="birre-en.pdf">
         <span class="icona">🍺</span> Bottled Beers
       </a>
     </div>
