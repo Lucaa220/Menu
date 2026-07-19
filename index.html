@@ -5,23 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menu Ristorante</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
       background-color: #faf7f2;
       text-align: center;
       padding: 20px;
-      box-sizing: border-box;
     }
     h1 {
       font-size: 1.4em;
       color: #333;
       margin-bottom: 30px;
+    }
+    .schermata {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .schermata.attiva {
+      display: flex;
     }
     .bottoni {
       display: flex;
@@ -30,7 +39,7 @@
       width: 100%;
       max-width: 320px;
     }
-    a.bottone {
+    a.bottone, button.bottone {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -40,25 +49,30 @@
       text-decoration: none;
       font-size: 1.1em;
       padding: 16px 28px;
+      border: none;
       border-radius: 8px;
       font-weight: bold;
+      font-family: inherit;
+      cursor: pointer;
       transition: background-color 0.2s ease, transform 0.1s ease;
     }
-    a.bottone:hover {
-      background-color: #a93226;
+    a.bottone:hover, button.bottone:hover { background-color: #a93226; }
+    a.bottone:active, button.bottone:active { transform: scale(0.98); }
+    button.bottone.secondario { background-color: #2c3e50; }
+    button.bottone.secondario:hover { background-color: #1f2c38; }
+    a.bottone.vini { background-color: #6d214f; }
+    a.bottone.vini:hover { background-color: #5a1a41; }
+    a.bottone.birre { background-color: #b8860b; }
+    a.bottone.birre:hover { background-color: #9a7009; }
+    .icona { font-size: 1.3em; }
+    a.indietro {
+      margin-top: 30px;
+      color: #777;
+      font-size: 0.9em;
+      text-decoration: none;
+      cursor: pointer;
     }
-    a.bottone:active {
-      transform: scale(0.98);
-    }
-    a.bottone.secondario {
-      background-color: #2c3e50;
-    }
-    a.bottone.secondario:hover {
-      background-color: #1f2c38;
-    }
-    .bandiera {
-      font-size: 1.3em;
-    }
+    a.indietro:hover { text-decoration: underline; }
     p.note {
       margin-top: 24px;
       color: #777;
@@ -67,15 +81,68 @@
   </style>
 </head>
 <body>
-  <h1>Scegli la lingua del menu<br>Choose your menu language</h1>
-  <div class="bottoni">
-    <a class="bottone" href="menu.pdf">
-      <span class="bandiera">🇮🇹</span> Menu in Italiano
-    </a>
-    <a class="bottone secondario" href="menu-en.pdf">
-      <span class="bandiera">🇬🇧</span> Menu in English
-    </a>
+
+  <!-- SCHERMATA 1: scelta lingua -->
+  <div id="schermata-lingua" class="schermata attiva">
+    <h1>Scegli la lingua del menu<br>Choose your menu language</h1>
+    <div class="bottoni">
+      <button class="bottone" onclick="mostraCategoria('it')">
+        <span class="icona">🇮🇹</span> Menu in Italiano
+      </button>
+      <button class="bottone secondario" onclick="mostraCategoria('en')">
+        <span class="icona">🇬🇧</span> Menu in English
+      </button>
+    </div>
+    <p class="note">Tocca un pulsante per scegliere la lingua</p>
   </div>
-  <p class="note">Tocca un pulsante per aprire il PDF del menu</p>
+
+  <!-- SCHERMATA 2: scelta categoria - Italiano -->
+  <div id="schermata-it" class="schermata">
+    <h1>Cosa vuoi consultare?</h1>
+    <div class="bottoni">
+      <a class="bottone" href="piatti-it.pdf">
+        <span class="icona">🍽️</span> Piatti
+      </a>
+      <a class="bottone vini" href="vini-it.pdf">
+        <span class="icona">🍷</span> Lista dei Vini
+      </a>
+      <a class="bottone birre" href="birre-it.pdf">
+        <span class="icona">🍺</span> Birre in Bottiglia
+      </a>
+    </div>
+    <a class="indietro" onclick="mostraLingua()">← Cambia lingua</a>
+  </div>
+
+  <!-- SCHERMATA 2: scelta categoria - English -->
+  <div id="schermata-en" class="schermata">
+    <h1>What would you like to see?</h1>
+    <div class="bottoni">
+      <a class="bottone" href="piatti-en.pdf">
+        <span class="icona">🍽️</span> Dishes
+      </a>
+      <a class="bottone vini" href="vini-en.pdf">
+        <span class="icona">🍷</span> Wine List
+      </a>
+      <a class="bottone birre" href="birre-en.pdf">
+        <span class="icona">🍺</span> Bottled Beers
+      </a>
+    </div>
+    <a class="indietro" onclick="mostraLingua()">← Change language</a>
+  </div>
+
+  <script>
+    function mostraCategoria(lingua) {
+      document.getElementById('schermata-lingua').classList.remove('attiva');
+      document.getElementById('schermata-it').classList.remove('attiva');
+      document.getElementById('schermata-en').classList.remove('attiva');
+      document.getElementById('schermata-' + lingua).classList.add('attiva');
+    }
+    function mostraLingua() {
+      document.getElementById('schermata-it').classList.remove('attiva');
+      document.getElementById('schermata-en').classList.remove('attiva');
+      document.getElementById('schermata-lingua').classList.add('attiva');
+    }
+  </script>
+
 </body>
 </html>
