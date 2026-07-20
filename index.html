@@ -1,201 +1,824 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trattoria da Franca - Menu</title>
-  <style>
-    * { box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trattoria da Franca - Menu</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    background-color: #3a1e1e;
+    color: #f7efe4;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .schermata {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 480px;
+    padding: 40px 24px 60px;
+  }
+  .schermata.attiva { display: flex; }
 
-    body {
-      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background-color: #3a1e1e;
-      color: #f7efe4;
-      text-align: center;
-      padding: 30px 20px;
-    }
+  .tagline {
+    font-family: 'Brush Script MT', 'Segoe Script', cursive;
+    font-size: 1.5em;
+    opacity: 0.9;
+    margin-bottom: -8px;
+  }
+  h1.logo {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-weight: 900;
+    font-size: 2.8em;
+    letter-spacing: 1px;
+    color: #ffffff;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+  }
+  h2.titolo-pagina {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-weight: 900;
+    font-size: 1.7em;
+    color: #ffffff;
+    margin: 0 0 24px 0;
+    text-align: center;
+  }
+  .sottotitolo {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+    line-height: 1.5;
+    text-align: center;
+  }
+  .separatore {
+    width: 60px;
+    height: 3px;
+    background-color: #f7efe4;
+    opacity: 0.6;
+    border-radius: 2px;
+    margin: 0 0 26px 0;
+  }
+  .bottoni {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 320px;
+  }
+  button.bottone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: #f7efe4;
+    color: #3a1e1e;
+    font-size: 1.1em;
+    font-weight: 700;
+    padding: 17px 28px;
+    border: none;
+    border-radius: 30px;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  button.bottone:hover { background-color: #ffffff; }
+  button.bottone:active { transform: scale(0.98); }
+  button.bottone.secondario {
+    background-color: transparent;
+    color: #f7efe4;
+    border: 2px solid #f7efe4;
+  }
+  button.bottone.secondario:hover { background-color: rgba(247,239,228,0.1); }
+  .icona { font-size: 1.3em; }
 
-    .schermata {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      max-width: 380px;
-    }
-    .schermata.attiva { display: flex; }
+  a.link-testo, span.link-testo {
+    margin-top: 30px;
+    color: #f7efe4;
+    opacity: 0.7;
+    font-size: 0.9em;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  a.link-testo:hover, span.link-testo:hover { opacity: 1; text-decoration: underline; }
 
-    .tagline {
-      font-family: 'Brush Script MT', 'Segoe Script', cursive;
-      font-size: 1.6em;
-      color: #f7efe4;
-      opacity: 0.9;
-      margin-bottom: -8px;
-    }
+  .barra-nav {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+  }
+  .barra-nav span { opacity: 0.75; cursor: pointer; }
+  .barra-nav span:hover { opacity: 1; text-decoration: underline; }
 
-    h1.logo {
-      font-family: 'Arial Black', Arial, sans-serif;
-      font-weight: 900;
-      font-size: 3em;
-      letter-spacing: 1px;
-      color: #ffffff;
-      margin: 0 0 10px 0;
-      text-transform: uppercase;
-    }
+  .nota-info {
+    font-style: italic;
+    font-size: 0.85em;
+    opacity: 0.85;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .nota-info p { margin: 6px 0; }
 
-    h2.titolo {
-      font-family: 'Arial Black', Arial, sans-serif;
-      font-weight: 900;
-      font-size: 1.6em;
-      color: #ffffff;
-      margin: 0 0 30px 0;
-    }
+  .sezione { width: 100%; margin-bottom: 30px; }
+  .sezione h3 {
+    font-family: 'Arial Black', Arial, sans-serif;
+    font-weight: 900;
+    font-size: 1.35em;
+    color: #ffffff;
+    margin: 0 0 14px 0;
+  }
+  .voce {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(247,239,228,0.12);
+  }
+  .voce .nome { font-size: 0.98em; }
+  .voce .prezzo { font-weight: 700; white-space: nowrap; }
 
-    .sottotitolo {
-      font-size: 1.15em;
-      color: #f7efe4;
-      margin-bottom: 34px;
-      line-height: 1.5;
-    }
+  .tabella-vino { width: 100%; }
+  .tabella-vino .intestazione {
+    display: flex;
+    justify-content: flex-end;
+    gap: 18px;
+    font-size: 0.8em;
+    font-weight: 700;
+    opacity: 0.75;
+    padding: 4px 0 8px 0;
+  }
+  .tabella-vino .intestazione span { width: 58px; text-align: right; }
+  .tabella-vino .voce-vino {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(247,239,228,0.12);
+    gap: 12px;
+  }
+  .tabella-vino .voce-vino .nome { flex: 1; font-size: 0.98em; }
+  .tabella-vino .voce-vino .prezzi { display: flex; gap: 18px; }
+  .tabella-vino .voce-vino .prezzi span { width: 58px; text-align: right; font-weight: 700; white-space: nowrap; }
 
-    .separatore {
-      width: 60px;
-      height: 3px;
-      background-color: #f7efe4;
-      opacity: 0.6;
-      border-radius: 2px;
-      margin: 0 0 30px 0;
-    }
+  .coperto {
+    margin-top: 10px;
+    text-align: center;
+    font-weight: 700;
+    opacity: 0.9;
+  }
 
-    .bottoni {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      width: 100%;
-    }
+  .torna-inizio {
+    margin-top: 20px;
+    text-align: center;
+  }
 
-    a.bottone, button.bottone {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background-color: #f7efe4;
-      color: #3a1e1e;
-      text-decoration: none;
-      font-size: 1.1em;
-      font-weight: 700;
-      padding: 17px 28px;
-      border: none;
-      border-radius: 30px;
-      font-family: inherit;
-      cursor: pointer;
-      letter-spacing: 0.3px;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    a.bottone:hover, button.bottone:hover { background-color: #ffffff; }
-    a.bottone:active, button.bottone:active { transform: scale(0.98); }
+  .nav-categorie {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+    margin-top: 34px;
+    padding-top: 26px;
+    border-top: 1px solid rgba(247,239,228,0.2);
+  }
+  .nav-categorie .etichetta {
+    text-align: center;
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+  button.bottone-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: transparent;
+    color: #f7efe4;
+    border: 2px solid #f7efe4;
+    font-size: 1em;
+    font-weight: 700;
+    padding: 14px 24px;
+    border-radius: 30px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  button.bottone-nav:hover { background-color: rgba(247,239,228,0.12); }
+  button.bottone-nav:active { transform: scale(0.98); }
 
-    button.bottone.secondario {
-      background-color: transparent;
-      color: #f7efe4;
-      border: 2px solid #f7efe4;
-    }
-    button.bottone.secondario:hover {
-      background-color: rgba(247, 239, 228, 0.1);
-    }
-
-    .icona { font-size: 1.3em; }
-
-    a.indietro {
-      margin-top: 34px;
-      color: #f7efe4;
-      opacity: 0.7;
-      font-size: 0.9em;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    a.indietro:hover { opacity: 1; text-decoration: underline; }
-
-    p.note {
-      margin-top: 26px;
-      color: #f7efe4;
-      opacity: 0.6;
-      font-size: 0.85em;
-    }
-  </style>
+  .avviso-pranzo {
+    font-size: 0.85em;
+    font-style: italic;
+    opacity: 0.75;
+    text-align: center;
+    margin-bottom: 22px;
+  }
+</style>
 </head>
 <body>
 
-  <!-- SCHERMATA 1: scelta lingua -->
-  <div id="schermata-lingua" class="schermata attiva">
-    <p class="tagline">Trattoria da Franca</p>
-    <h1 class="logo">Menu'</h1>
-    <div class="separatore"></div>
-    <p class="sottotitolo">Scegli la lingua del menu<br>Choose your menu language</p>
-    <div class="bottoni">
-      <button class="bottone" onclick="mostraCategoria('it')">
-        <span class="icona">🇮🇹</span> Italiano
-      </button>
-      <button class="bottone secondario" onclick="mostraCategoria('en')">
-        <span class="icona">🇬🇧</span> English
-      </button>
-    </div>
+<!-- SCHERMATA 1: scelta lingua -->
+<div id="schermata-lingua" class="schermata attiva">
+  <p class="tagline">Trattoria da Franca</p>
+  <h1 class="logo">Menu'</h1>
+  <div class="separatore"></div>
+  <p class="sottotitolo">Scegli la lingua del menu<br>Choose your menu language</p>
+  <div class="bottoni">
+    <button class="bottone" onclick="selezionaLingua('it')">
+      <span class="icona">🇮🇹</span> Italiano
+    </button>
+    <button class="bottone secondario" onclick="selezionaLingua('en')">
+      <span class="icona">🇬🇧</span> English
+    </button>
   </div>
+</div>
 
-  <!-- SCHERMATA 2: scelta categoria - Italiano -->
-  <div id="schermata-it" class="schermata">
-    <p class="tagline">Trattoria da Franca</p>
-    <h2 class="titolo">Cosa vuoi consultare?</h2>
-    <div class="bottoni">
-      <a class="bottone" href="piatti-it.pdf">
-        <span class="icona">🍽️</span> Piatti
-      </a>
-      <a class="bottone" href="vini-it.pdf">
-        <span class="icona">🍷</span> Lista dei Vini
-      </a>
-      <a class="bottone" href="birre-it.pdf">
-        <span class="icona">🍺</span> Birre in Bottiglia
-      </a>
-    </div>
-    <a class="indietro" onclick="mostraLingua()">← Cambia lingua</a>
+<!-- SCHERMATA 2: scelta categoria -->
+<div id="schermata-categoria" class="schermata">
+  <p class="tagline">Trattoria da Franca</p>
+  <h2 class="titolo-pagina" id="cat-titolo"></h2>
+  <div class="bottoni">
+    <button class="bottone" onclick="mostraContenuto('piatti')">
+      <span class="icona">🍽️</span> <span id="cat-piatti"></span>
+    </button>
+    <button class="bottone" onclick="mostraContenuto('vini')">
+      <span class="icona">🍷</span> <span id="cat-vini"></span>
+    </button>
+    <button class="bottone" onclick="mostraContenuto('birre')">
+      <span class="icona">🍺</span> <span id="cat-birre"></span>
+    </button>
   </div>
+  <span class="link-testo" onclick="mostraLingua()" id="cat-cambia-lingua"></span>
+</div>
 
-  <!-- SCHERMATA 2: scelta categoria - English -->
-  <div id="schermata-en" class="schermata">
-    <p class="tagline">Trattoria da Franca</p>
-    <h2 class="titolo">What would you like to see?</h2>
-    <div class="bottoni">
-      <a class="bottone" href="piatti-en.pdf">
-        <span class="icona">🍽️</span> Dishes
-      </a>
-      <a class="bottone" href="vini-en.pdf">
-        <span class="icona">🍷</span> Wine List
-      </a>
-      <a class="bottone" href="birre-en.pdf">
-        <span class="icona">🍺</span> Bottled Beers
-      </a>
-    </div>
-    <a class="indietro" onclick="mostraLingua()">← Change language</a>
+<!-- SCHERMATA 3: contenuto (piatti / vini / birre) -->
+<div id="schermata-contenuto" class="schermata">
+  <div class="barra-nav">
+    <span onclick="mostraCategoria()" id="nav-indietro"></span>
+    <span onclick="mostraLingua()" id="nav-lingua"></span>
   </div>
+  <p class="tagline">Trattoria da Franca</p>
+  <h2 class="titolo-pagina" id="cont-titolo"></h2>
+  <div id="cont-nota" class="nota-info"></div>
+  <div id="cont-corpo" style="width:100%;"></div>
+  <div class="torna-inizio">
+    <span class="link-testo" onclick="mostraCategoria()" id="cont-torna"></span>
+  </div>
+</div>
 
-  <script>
-    function mostraCategoria(lingua) {
-      document.getElementById('schermata-lingua').classList.remove('attiva');
-      document.getElementById('schermata-it').classList.remove('attiva');
-      document.getElementById('schermata-en').classList.remove('attiva');
-      document.getElementById('schermata-' + lingua).classList.add('attiva');
+<script>
+let linguaCorrente = 'it';
+
+/* ---------- TESTI INTERFACCIA ---------- */
+const ui = {
+  it: {
+    catTitolo: "Cosa vuoi consultare?",
+    piatti: "Piatti",
+    vini: "Lista dei Vini",
+    birre: "Birre in Bottiglia",
+    cambiaLingua: "← Cambia lingua",
+    indietro: "← Categorie",
+    tornaCategorie: "← Torna alle categorie",
+    vaiA: "Vai a",
+    avvisoPranzo: "Alcuni piatti non sono disponibili a pranzo (11:30–15:00)"
+  },
+  en: {
+    catTitolo: "What would you like to see?",
+    piatti: "Dishes",
+    vini: "Wine List",
+    birre: "Bottled Beers",
+    cambiaLingua: "← Change language",
+    indietro: "← Categories",
+    tornaCategorie: "← Back to categories",
+    vaiA: "Go to",
+    avvisoPranzo: "Some dishes are not available at lunch (11:30 AM–3:00 PM)"
+  }
+};
+
+/* ---------- DATI MENU PIATTI ---------- */
+const piattiData = {
+  it: {
+    titolo: "Menù",
+    nota: [
+      "La gentile clientela è pregata di informare il personale di sala per qualsiasi intolleranza ed allergia.",
+      "Vi ricordiamo inoltre che il locale non dispone di una cucina separata per le pietanze senza glutine, sarà comunque nostra premura preparare tutte le pietanze senza contaminazioni."
+    ],
+    sezioni: [
+      { titolo: "Antipasti", items: [
+        ["Culaccia, stracciatella e chips di polenta croccante","€ 16,00"],
+        ["Crudo di patanegra con pinsa romana, sale grosso e rosmarino","€ 16,00"],
+        ["Selezione di formaggi con composte","€ 16,50"],
+        ["Battuta di manzo a coltello con misticanze e frutta","€ 15,00"],
+        ["Sformatino di patate con asparagi e guanciale croccante","€ 14,50"],
+        ["Salume misto (coppa, pancetta, crudo, salame)","€ 12,50"],
+        ["Tagliere della casa (consigliato per 2 persone)","€ 24,00"],
+        ["Caprese con mozzarella di bufala e pesto di basilico","€ 12,50"],
+        ["Carne salada trentina con pomodori freschi e olio agrumato","€ 16,00"],
+        ["Millefoglie di melanzane, pomodoro e mozzarella","€ 13,00"],
+        ["Gnocco fritto (6 pezzi)","€ 3,80"],
+        ["Tigelle (5 pezzi)","€ 3,80"]
+      ]},
+      { titolo: "Primi", items: [
+        ["Tortelli di zucca con burro e salvia oppure pomodoro e pancetta","€ 13,00"],
+        ["Tortelli di ricotta e basilico con pomodorini e stracciatella","€ 13,00"],
+        ["Tortelli di porchetta al burro ed erba cipollina","€ 13,00"],
+        ["Tagliatelle all'anatra","€ 13,00"],
+        ["Tagliatelle asparagi e speck","€ 13,00"],
+        ["Maccheroncini con lo stracotto d'asino","€ 13,00"],
+        ["Maccheroncini con pistacchio, mascarpone e pancetta","€ 13,00"],
+        ["Maccheroncini di grano saraceno con pesto di rucola, stracchino e salsiccia","€ 13,00"],
+        ["Bigoli con lambrusco e salsiccia","€ 13,00"],
+        ["Bigoli alla carbonara","€ 13,00"],
+        ["Bigoli con acciughe del cantabrico, burro e limone","€ 13,00"],
+        ["Risotto alla mantovana","€ 13,00"],
+        ["Risotto con mitili, gin e stracciatella","€ 13,00"]
+      ]},
+      { titolo: "Secondi", items: [
+        ["Stracotto d'asino con polenta abbrustolita","€ 16,00"],
+        ["Costine in salsa bbq cotte a bassa temperatura","€ 15,00"],
+        ["Stinco al forno alla birra e miele","€ 14,00"],
+        ["Tagliata di pollo con pomodorini secchi e aceto balsamico","€ 15,00"],
+        ["Tagliata di manzo al rosmarino affumicato e olio d'oliva a crudo","€ 19,00"],
+        ["Tagliata di manzo con rucola e grana","€ 19,00"],
+        ["Filetto di manzo con cipolla caramellata e pancetta","€ 20,00"],
+        ["Tagliata di manzo con brandy e granella di pistacchio","€ 20,00"]
+      ]},
+      { titolo: "Secondi alla brace/griglia", items: [
+        ["Grigliata di maiale (costine, pancetta, coppa, salsiccia)","€ 14,50"],
+        ["Tagliata di manzo","€ 17,50"],
+        ["Filetto di manzo","€ 18,50"],
+        ["Costata garonese","€/kg 46,00"],
+        ["Fiorentina garonese","€/kg 56,00"],
+        ["Salsiccia con polenta abbrustolita","€ 13,00"]
+      ]},
+      { titolo: "Contorni", items: [
+        ["Patatine fritte","€ 4,50"],
+        ["Patate al forno","€ 4,50"],
+        ["Verdure grigliate","€ 4,50"],
+        ["Verdure pastellate","€ 4,50"],
+        ["Verdure cotte","€ 4,50"]
+      ]},
+      { titolo: "Dessert", items: [
+        ["Dolci della casa","€ 6,00"],
+        ["Sorbetto","€ 4,00"]
+      ]},
+      { titolo: "Acqua", items: [
+        ["Naturale o Frizzante 0,5L","€ 1,50"],
+        ["Naturale o Frizzante 1L","€ 2,50"]
+      ]},
+      { titolo: "Vino della Casa", tabella: true, colonne: ["1/4L","1/2L","1L"], items: [
+        ["Trebbiano bianco", ["€ 4,00","€ 6,00","€ 11,00"]],
+        ["Lambrusco rosso", ["€ 4,00","€ 6,00","€ 11,00"]],
+        ["Lambrusco rosato", ["€ 4,00","€ 6,00","€ 11,00"]],
+        ["Sangiovese", ["€ 4,00","€ 6,00","€ 11,00"]]
+      ]},
+      { titolo: "Birra alla spina", items: [
+        ["Forst bionda 0,3L","€ 3,50"],
+        ["Forst bionda 0,4L","€ 4,50"],
+        ["Forst bionda 0,5L","€ 5,50"]
+      ]},
+      { titolo: "Bibite", items: [
+        ["Coca cola in lattina 33cl","€ 3,50"],
+        ["Coca cola in bottiglia 1L","€ 6,00"]
+      ]}
+    ],
+    coperto: "Coperto € 2"
+  },
+  en: {
+    titolo: "Menu",
+    nota: [
+      "Guests are kindly requested to inform the waiting staff of any intolerance or allergy.",
+      "Please note that the restaurant does not have a separate kitchen for gluten-free dishes; we will nonetheless take every care to prepare all dishes avoiding cross-contamination."
+    ],
+    sezioni: [
+      { titolo: "Starters", items: [
+        ["Culaccia ham, stracciatella cheese and crispy polenta chips","€ 16,00"],
+        ["Cured Patanegra ham with Roman pinsa, coarse salt and rosemary","€ 16,00"],
+        ["Selection of cheeses with fruit compotes","€ 16,50"],
+        ["Hand-cut beef tartare with mixed leaves and fruit","€ 15,00"],
+        ["Potato flan with asparagus and crispy guanciale","€ 14,50"],
+        ["Mixed cured meats (coppa, pancetta, prosciutto, salami)","€ 12,50"],
+        ["House sharing board (recommended for 2 people)","€ 24,00"],
+        ["Caprese salad with buffalo mozzarella and basil pesto","€ 12,50"],
+        ["Trentino-style cured beef with fresh tomatoes and citrus oil","€ 16,00"],
+        ["Eggplant, tomato and mozzarella millefeuille","€ 13,00"],
+        ["Fried dough \"gnocco fritto\" (6 pieces)","€ 3,80"],
+        ["\"Tigelle\" flatbreads (5 pieces)","€ 3,80"]
+      ]},
+      { titolo: "First Courses", items: [
+        ["Pumpkin tortelli with butter and sage, or tomato and pancetta","€ 13,00"],
+        ["Ricotta and basil tortelli with cherry tomatoes and stracciatella","€ 13,00"],
+        ["Porchetta tortelli with butter and chives","€ 13,00"],
+        ["Tagliatelle with duck ragù","€ 13,00"],
+        ["Tagliatelle with asparagus and speck","€ 13,00"],
+        ["Maccheroncini with slow-cooked donkey meat","€ 13,00"],
+        ["Maccheroncini with pistachio, mascarpone and pancetta","€ 13,00"],
+        ["Buckwheat maccheroncini with rocket pesto, stracchino cheese and sausage","€ 13,00"],
+        ["Bigoli pasta with Lambrusco wine and sausage","€ 13,00"],
+        ["Bigoli pasta carbonara","€ 13,00"],
+        ["Bigoli pasta with Cantabrian anchovies, butter and lemon","€ 13,00"],
+        ["Risotto Mantova-style","€ 13,00"],
+        ["Risotto with mussels, gin and stracciatella","€ 13,00"]
+      ]},
+      { titolo: "Main Courses", items: [
+        ["Slow-cooked donkey stew with toasted polenta","€ 16,00"],
+        ["Low-temperature cooked ribs in BBQ sauce","€ 15,00"],
+        ["Oven-baked pork shank with beer and honey","€ 14,00"],
+        ["Sliced chicken with sun-dried tomatoes and balsamic vinegar","€ 15,00"],
+        ["Sliced beef with smoked rosemary and raw olive oil","€ 19,00"],
+        ["Sliced beef with rocket and Grana cheese","€ 19,00"],
+        ["Beef fillet with caramelized onion and pancetta","€ 20,00"],
+        ["Sliced beef with brandy and chopped pistachio","€ 20,00"]
+      ]},
+      { titolo: "Grilled Main Courses", items: [
+        ["Grilled pork platter (ribs, pancetta, coppa, sausage)","€ 14,50"],
+        ["Sliced beef","€ 17,50"],
+        ["Beef fillet","€ 18,50"],
+        ["Garonese rib steak","€/kg 46,00"],
+        ["Garonese Fiorentina steak","€/kg 56,00"],
+        ["Sausage with toasted polenta","€ 13,00"]
+      ]},
+      { titolo: "Side Dishes", items: [
+        ["French fries","€ 4,50"],
+        ["Roast potatoes","€ 4,50"],
+        ["Grilled vegetables","€ 4,50"],
+        ["Battered vegetables","€ 4,50"],
+        ["Cooked vegetables","€ 4,50"]
+      ]},
+      { titolo: "Desserts", items: [
+        ["House desserts","€ 6,00"],
+        ["Sorbet","€ 4,00"]
+      ]},
+      { titolo: "Water", items: [
+        ["Still or Sparkling 0.5L","€ 1,50"],
+        ["Still or Sparkling 1L","€ 2,50"]
+      ]},
+      { titolo: "House Wine", tabella: true, colonne: ["1/4L","1/2L","1L"], items: [
+        ["Trebbiano white", ["€ 4,00","€ 6,00","€ 11,00"]],
+        ["Lambrusco red", ["€ 4,00","€ 6,00","€ 11,00"]],
+        ["Lambrusco rosé", ["€ 4,00","€ 6,00","€ 11,00"]],
+        ["Sangiovese", ["€ 4,00","€ 6,00","€ 11,00"]]
+      ]},
+      { titolo: "Draft Beer", items: [
+        ["Forst lager 0,3L","€ 3,50"],
+        ["Forst lager 0,4L","€ 4,50"],
+        ["Forst lager 0,5L","€ 5,50"]
+      ]},
+      { titolo: "Soft Drinks", items: [
+        ["Coca-Cola can 33cl","€ 3,50"],
+        ["Coca-Cola bottle 1L","€ 6,00"]
+      ]}
+    ],
+    coperto: "Cover charge € 2"
+  }
+};
+
+/* ---------- DATI VINI ---------- */
+const viniData = {
+  it: {
+    titolo: "Vini",
+    sezioni: [
+      { titolo: "Le Bollicine", items: [
+        ["Prosecco Superiore DOCG Valdobbiadene \"Bandarossa\" – Bortolomiol","€ 22"],
+        ["Blanc de Noirs Metodo Classico – Gualtieri","€ 20"],
+        ["Prosecco Superiore Valdobbiadene DOCG – Bortolin","€ 22"],
+        ["Spumante Brut \"Serre\" – Pederiva","€ 16"],
+        ["Prosecco Superiore Valdobbiadene DOCG Brut – Tordera","€ 22"],
+        ["Prosecco Superiore Conegliano Valdobbiadene DOCG Brut – Masottina","€ 20"],
+        ["Franciacorta Brut – San-Tus","€ 35"],
+        ["Perlugo Metodo Classico Bio – Pievalta","€ 25"],
+        ["Trento DOC Brut \"601\" – Cantina di Trento","€ 27"],
+        ["Pignoletto Brut – Romandiola","€ 17"],
+        ["Dirado Brut Millesimato – Corte Capitelli","€ 20"],
+        ["Trento DOC \"601\" Dosaggio Zero – Cantina di Trento","€ 30"],
+        ["Verdicchio Metodo Classico Extra Brut 2025 – Umani Ronchi","€ 35"]
+      ]},
+      { titolo: "I Bianchi", items: [
+        ["Custoza DOC 2022 – Menegotti","€ 15"],
+        ["Irpinia Falanghina DOC 2024 – Luciano Ercolino","€ 18"],
+        ["Tamanis Friuli DOC Aquileia – Ca' Bolani","€ 22"],
+        ["Passerina 2025 – Umani Ronchi","€ 18"],
+        ["Pecorino 2025 – Umani Ronchi","€ 18"],
+        ["Fiano di Avellino DOCG 2024 – Luciano Ercolino","€ 23"]
+      ]},
+      { titolo: "I Rosati", items: [
+        ["Trento DOC Brut Rosé - Cantina di Trento","€ 28"],
+        ["Rosé Extra Brut - Ca' dei Frati","€ 35"],
+        ["Prope Cerasuolo d'Abruzzo - Velenosi","€ 18"],
+        ["Sollevante Spumante Brut - Tenuta La Commenda","€ 20"],
+        ["Morena Metodo Classico - Cantina Reale","€ 25"],
+        ["Chiaretto di Bardolino Rosé - Menegotti","€ 18"]
+      ]},
+      { titolo: "I Rossi", items: [
+        ["Montepulciano d'Abruzzo 0,375 - Vigna Corvino","€ 9"],
+        ["Ninfa 2022 - Velenosi","€ 26"],
+        ["Tamanis Friuli DOC 2020 - Ca' Bolani","€ 26"],
+        ["Roggio del Filare 2020 - Velenosi","€ 50"],
+        ["Caeles Nero d'Avola 2023 - Firriato","€ 24"],
+        ["Mezzacosta Rosso Veronese 2019 - Menegotti","€ 25"],
+        ["Solestà Rosso Piceno Superiore 2022 - Velenosi","€ 26"],
+        ["Querciantica Lacrima di Morro d'Alba DOC Superiore - Velenosi","€ 25"],
+        ["Südtirol Blauburgunder 2024 - Muri-Gries","€ 25"],
+        ["Guiry Sangiovese 2022 - Tenuta Biodinamica Mara","€ 22"],
+        ["Amarone della Valpolicella 2021 - Bertani","€ 50"],
+        ["Brunello di Montalcino 2019 - Val di Suga","€ 50"],
+        ["Salterio Rosso di Montepulciano DOC 2024 - Tenuta Trerose","€ 22"],
+        ["Ludi Offida DOCG 2019 - Velenosi","€ 40"],
+        ["Verso Sera Montepulciano d'Abruzzo DOCG 2021 - Velenosi","€ 60"]
+      ]},
+      { titolo: "I Lambruschi", items: [
+        ["Lambrusco Grasparossa di Castelvetro DOC Amabile - Gavioli","€ 14"],
+        ["Lambrusco Concerto 1,5 L - Medici Ermete","€ 26"],
+        ["Lambrusco La Villetta DOP - Corte Villetta","€ 12"],
+        ["Galpedar Lambrusco - Lebovitz","€ 14"],
+        ["Il Ligabue Lambrusco DOP - Cantina Gualtieri","€ 16"],
+        ["Si Fosse Foco Lambrusco Biologico Scuro - Pacchioni","€ 14"],
+        ["Bucciamara - Cantina Gualtieri","€ 16"],
+        ["Bollerosse Lambrusco Reggiano Frizzante DOP - Podere Francesco","€ 13"],
+        ["Confini Lambrusco di Sermide - Confini del Vino","€ 14"]
+      ]}
+    ]
+  },
+  en: {
+    titolo: "Wines",
+    sezioni: [
+      { titolo: "Sparkling Wines", items: [
+        ["Prosecco Superiore DOCG Valdobbiadene \"Bandarossa\" – Bortolomiol","€ 22"],
+        ["Blanc de Noirs Classic Method – Gualtieri","€ 20"],
+        ["Prosecco Superiore Valdobbiadene DOCG – Bortolin","€ 22"],
+        ["Sparkling Brut \"Serre\" – Pederiva","€ 16"],
+        ["Prosecco Superiore Valdobbiadene DOCG Brut – Tordera","€ 22"],
+        ["Prosecco Superiore Conegliano Valdobbiadene DOCG Brut – Masottina","€ 20"],
+        ["Franciacorta Brut – San-Tus","€ 35"],
+        ["Perlugo Classic Method, Organic – Pievalta","€ 25"],
+        ["Trento DOC Brut \"601\" – Cantina di Trento","€ 27"],
+        ["Pignoletto Brut – Romandiola","€ 17"],
+        ["Dirado Brut Vintage – Corte Capitelli","€ 20"],
+        ["Trento DOC \"601\" Zero Dosage – Cantina di Trento","€ 30"],
+        ["Verdicchio Classic Method Extra Brut 2025 – Umani Ronchi","€ 35"]
+      ]},
+      { titolo: "White Wines", items: [
+        ["Custoza DOC 2022 – Menegotti","€ 15"],
+        ["Irpinia Falanghina DOC 2024 – Luciano Ercolino","€ 18"],
+        ["Tamanis Friuli DOC Aquileia – Ca' Bolani","€ 22"],
+        ["Passerina 2025 – Umani Ronchi","€ 18"],
+        ["Pecorino 2025 – Umani Ronchi","€ 18"],
+        ["Fiano di Avellino DOCG 2024 – Luciano Ercolino","€ 23"]
+      ]},
+      { titolo: "Rosé Wines", items: [
+        ["Trento DOC Brut Rosé - Cantina di Trento","€ 28"],
+        ["Rosé Extra Brut - Ca' dei Frati","€ 35"],
+        ["Prope Cerasuolo d'Abruzzo - Velenosi","€ 18"],
+        ["Sollevante Sparkling Brut - Tenuta La Commenda","€ 20"],
+        ["Morena Classic Method - Cantina Reale","€ 25"],
+        ["Chiaretto di Bardolino Rosé - Menegotti","€ 18"]
+      ]},
+      { titolo: "Red Wines", items: [
+        ["Montepulciano d'Abruzzo 0.375 - Vigna Corvino","€ 9"],
+        ["Ninfa 2022 - Velenosi","€ 26"],
+        ["Tamanis Friuli DOC 2020 - Ca' Bolani","€ 26"],
+        ["Roggio del Filare 2020 - Velenosi","€ 50"],
+        ["Caeles Nero d'Avola 2023 - Firriato","€ 24"],
+        ["Mezzacosta Rosso Veronese 2019 - Menegotti","€ 25"],
+        ["Solestà Rosso Piceno Superiore 2022 - Velenosi","€ 26"],
+        ["Querciantica Lacrima di Morro d'Alba DOC Superiore - Velenosi","€ 25"],
+        ["Südtirol Blauburgunder 2024 - Muri-Gries","€ 25"],
+        ["Guiry Sangiovese 2022 - Tenuta Biodinamica Mara","€ 22"],
+        ["Amarone della Valpolicella 2021 - Bertani","€ 50"],
+        ["Brunello di Montalcino 2019 - Val di Suga","€ 50"],
+        ["Salterio Rosso di Montepulciano DOC 2024 - Tenuta Trerose","€ 22"],
+        ["Ludi Offida DOCG 2019 - Velenosi","€ 40"],
+        ["Verso Sera Montepulciano d'Abruzzo DOCG 2021 - Velenosi","€ 60"]
+      ]},
+      { titolo: "Lambrusco Wines", items: [
+        ["Lambrusco Grasparossa di Castelvetro DOC Amabile - Gavioli","€ 14"],
+        ["Lambrusco Concerto 1.5 L - Medici Ermete","€ 26"],
+        ["Lambrusco La Villetta DOP - Corte Villetta","€ 12"],
+        ["Galpedar Lambrusco - Lebovitz","€ 14"],
+        ["Il Ligabue Lambrusco DOP - Cantina Gualtieri","€ 16"],
+        ["Si Fosse Foco Lambrusco, Organic, Dark - Pacchioni","€ 14"],
+        ["Bucciamara - Cantina Gualtieri","€ 16"],
+        ["Bollerosse Lambrusco Reggiano Frizzante DOP - Podere Francesco","€ 13"],
+        ["Confini Lambrusco di Sermide - Confini del Vino","€ 14"]
+      ]}
+    ]
+  }
+};
+
+/* ---------- DATI BIRRE ---------- */
+const birreData = {
+  it: {
+    titolo: "Birre",
+    sezioni: [
+      { titolo: "Birre Artigianali", items: [
+        ["Guglielmo – Hell Non Filtrata","€ 6"],
+        ["Cordelia – IPA Non Filtrata","€ 6"],
+        ["Amleto – Bock Non Filtrata","€ 6"]
+      ]}
+    ]
+  },
+  en: {
+    titolo: "Beers",
+    sezioni: [
+      { titolo: "Craft Beers", items: [
+        ["Guglielmo – Unfiltered Hell Lager","€ 6"],
+        ["Cordelia – Unfiltered IPA","€ 6"],
+        ["Amleto – Unfiltered Bock","€ 6"]
+      ]}
+    ]
+  }
+};
+
+/* ---------- FASCIA ORARIA PRANZO (11:30 - 15:00) ---------- */
+function isOrarioPranzo() {
+  const ora = new Date();
+  const minutiTotali = ora.getHours() * 60 + ora.getMinutes();
+  const inizioPranzo = 11 * 60 + 30;  // 11:30
+  const finePranzo = 15 * 60;         // 15:00
+  return minutiTotali >= inizioPranzo && minutiTotali < finePranzo;
+}
+
+/* ---------- NAVIGAZIONE ---------- */
+function nascondiTutte() {
+  document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
+}
+
+function selezionaLingua(lingua) {
+  linguaCorrente = lingua;
+  aggiornaTestiCategoria();
+  nascondiTutte();
+  document.getElementById('schermata-categoria').classList.add('attiva');
+}
+
+function mostraLingua() {
+  nascondiTutte();
+  document.getElementById('schermata-lingua').classList.add('attiva');
+}
+
+function mostraCategoria() {
+  aggiornaTestiCategoria();
+  nascondiTutte();
+  document.getElementById('schermata-categoria').classList.add('attiva');
+}
+
+function aggiornaTestiCategoria() {
+  const t = ui[linguaCorrente];
+  document.getElementById('cat-titolo').textContent = t.catTitolo;
+  document.getElementById('cat-piatti').textContent = t.piatti;
+  document.getElementById('cat-vini').textContent = t.vini;
+  document.getElementById('cat-birre').textContent = t.birre;
+  document.getElementById('cat-cambia-lingua').textContent = t.cambiaLingua;
+}
+
+function mostraContenuto(tipo) {
+  const t = ui[linguaCorrente];
+  let dati;
+  if (tipo === 'piatti') dati = piattiData[linguaCorrente];
+  if (tipo === 'vini') dati = viniData[linguaCorrente];
+  if (tipo === 'birre') dati = birreData[linguaCorrente];
+
+  document.getElementById('nav-indietro').textContent = t.indietro;
+  document.getElementById('nav-lingua').textContent = t.cambiaLingua;
+  document.getElementById('cont-torna').textContent = t.tornaCategorie;
+  document.getElementById('cont-titolo').textContent = dati.titolo;
+
+  const notaEl = document.getElementById('cont-nota');
+  notaEl.innerHTML = '';
+  if (dati.nota) {
+    dati.nota.forEach(p => {
+      const el = document.createElement('p');
+      el.textContent = p;
+      notaEl.appendChild(el);
+    });
+  }
+
+  const pranzoAttivo = isOrarioPranzo();
+  let almenoUnoNascosto = false;
+
+  const corpo = document.getElementById('cont-corpo');
+  corpo.innerHTML = '';
+
+  if (tipo === 'piatti' && pranzoAttivo) {
+    dati.sezioni.forEach(sez => {
+      if (!sez.tabella && sez.items.some(it => it[2] === true)) almenoUnoNascosto = true;
+    });
+    if (almenoUnoNascosto) {
+      const avviso = document.createElement('div');
+      avviso.className = 'avviso-pranzo';
+      avviso.textContent = t.avvisoPranzo;
+      corpo.appendChild(avviso);
     }
-    function mostraLingua() {
-      document.getElementById('schermata-it').classList.remove('attiva');
-      document.getElementById('schermata-en').classList.remove('attiva');
-      document.getElementById('schermata-lingua').classList.add('attiva');
+  }
+
+  dati.sezioni.forEach(sez => {
+    const sezDiv = document.createElement('div');
+    sezDiv.className = 'sezione';
+    const h3 = document.createElement('h3');
+    h3.textContent = sez.titolo;
+    sezDiv.appendChild(h3);
+
+    if (sez.tabella) {
+      const tab = document.createElement('div');
+      tab.className = 'tabella-vino';
+      const intest = document.createElement('div');
+      intest.className = 'intestazione';
+      sez.colonne.forEach(c => {
+        const s = document.createElement('span');
+        s.textContent = c;
+        intest.appendChild(s);
+      });
+      tab.appendChild(intest);
+      sez.items.forEach(([nome, prezzi]) => {
+        const riga = document.createElement('div');
+        riga.className = 'voce-vino';
+        const nomeEl = document.createElement('span');
+        nomeEl.className = 'nome';
+        nomeEl.textContent = nome;
+        const prezziEl = document.createElement('div');
+        prezziEl.className = 'prezzi';
+        prezzi.forEach(p => {
+          const s = document.createElement('span');
+          s.textContent = p;
+          prezziEl.appendChild(s);
+        });
+        riga.appendChild(nomeEl);
+        riga.appendChild(prezziEl);
+        tab.appendChild(riga);
+      });
+      sezDiv.appendChild(tab);
+    } else {
+      let visibili = 0;
+      sez.items.forEach(([nome, prezzo, soloCena]) => {
+        if (tipo === 'piatti' && pranzoAttivo && soloCena === true) return; // nascosto a pranzo
+        visibili++;
+        const riga = document.createElement('div');
+        riga.className = 'voce';
+        const nomeEl = document.createElement('span');
+        nomeEl.className = 'nome';
+        nomeEl.textContent = nome;
+        const prezzoEl = document.createElement('span');
+        prezzoEl.className = 'prezzo';
+        prezzoEl.textContent = prezzo;
+        riga.appendChild(nomeEl);
+        riga.appendChild(prezzoEl);
+        sezDiv.appendChild(riga);
+      });
+      if (visibili === 0) return; // sezione interamente nascosta a pranzo, non mostrarla
     }
-  </script>
+    corpo.appendChild(sezDiv);
+  });
+
+  if (dati.coperto) {
+    const cop = document.createElement('div');
+    cop.className = 'coperto';
+    cop.textContent = dati.coperto;
+    corpo.appendChild(cop);
+  }
+
+  /* Bottoni di navigazione rapida verso le altre categorie */
+  const ordineCategorie = {
+    piatti: { icona: '🍷', label: t.vini, tipo: 'vini', icona2: '🍺', label2: t.birre, tipo2: 'birre' },
+    vini:   { icona: '🍽️', label: t.piatti, tipo: 'piatti', icona2: '🍺', label2: t.birre, tipo2: 'birre' },
+    birre:  { icona: '🍽️', label: t.piatti, tipo: 'piatti', icona2: '🍷', label2: t.vini, tipo2: 'vini' }
+  };
+  const nav = ordineCategorie[tipo];
+  const navDiv = document.createElement('div');
+  navDiv.className = 'nav-categorie';
+  const etichetta = document.createElement('div');
+  etichetta.className = 'etichetta';
+  etichetta.textContent = linguaCorrente === 'it' ? 'Continua con:' : 'Continue with:';
+  navDiv.appendChild(etichetta);
+
+  const btn1 = document.createElement('button');
+  btn1.className = 'bottone-nav';
+  btn1.innerHTML = `<span class="icona">${nav.icona}</span> ${t.vaiA} ${nav.label}`;
+  btn1.onclick = () => mostraContenuto(nav.tipo);
+  navDiv.appendChild(btn1);
+
+  const btn2 = document.createElement('button');
+  btn2.className = 'bottone-nav';
+  btn2.innerHTML = `<span class="icona">${nav.icona2}</span> ${t.vaiA} ${nav.label2}`;
+  btn2.onclick = () => mostraContenuto(nav.tipo2);
+  navDiv.appendChild(btn2);
+
+  corpo.appendChild(navDiv);
+
+  nascondiTutte();
+  document.getElementById('schermata-contenuto').classList.add('attiva');
+  window.scrollTo(0, 0);
+}
+</script>
 
 </body>
 </html>
