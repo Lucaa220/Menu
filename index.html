@@ -1,373 +1,414 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trattoria da Franca - Menu</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2b1810" />
+<meta name="description" content="Menu - Trattoria da Franca" />
+<title>Trattoria da Franca — Menu</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E🍷%3C/text%3E%3C/svg%3E" />
+<link rel="preload" as="image" href="da-franca.png" fetchpriority="high" />
 <style>
-  * { box-sizing: border-box; }
+/* =========================================================
+   Trattoria da Franca — Menu digitale (single-file)
+   HTML + CSS + JS Vanilla, pronto per GitHub Pages.
+   ========================================================= */
+:root{
+  --col-marrone-scuro:#2b1810;
+  --col-marrone:#3d2418;
+  --col-marrone-caldo:#5a3826;
+  --col-beige:#e8dcc4;
+  --col-panna:#faf5ec;
+  --col-oro:#c8a464;
+  --col-oro-chiaro:#dcbe86;
+  --col-vino:#7a1f2b;
 
-  :root {
-    /* Scala fluida: cambia in base alla larghezza reale del viewport,
-       cosi' su telefono, tablet e desktop le proporzioni restano coerenti */
-    --spazio-xs: clamp(6px, 1vw, 10px);
-    --spazio-s: clamp(10px, 1.6vw, 16px);
-    --spazio-m: clamp(16px, 2.6vw, 26px);
-    --spazio-l: clamp(24px, 4vw, 44px);
-    --spazio-xl: clamp(32px, 6vw, 64px);
+  --testo:var(--col-panna);
+  --testo-muted:rgba(250,245,236,.72);
+  --divisore:rgba(200,164,100,.22);
 
-    --testo-base: clamp(0.95rem, 0.85rem + 0.35vw, 1.1rem);
-    --testo-sottotitolo: clamp(1rem, 0.9rem + 0.4vw, 1.2rem);
-    --testo-titolo: clamp(1.4rem, 1.15rem + 1.2vw, 2rem);
-    --testo-logo: clamp(2rem, 1.5rem + 2.2vw, 3.2rem);
-    --testo-tagline: clamp(1.15rem, 1rem + 0.7vw, 1.6rem);
-    --testo-piccolo: clamp(0.78rem, 0.72rem + 0.25vw, 0.92rem);
+  --spazio-xs:clamp(6px,1vw,10px);
+  --spazio-s:clamp(10px,1.6vw,16px);
+  --spazio-m:clamp(16px,2.6vw,26px);
+  --spazio-l:clamp(24px,4vw,44px);
+  --spazio-xl:clamp(32px,6vw,64px);
 
-    --larghezza-contenuto: min(92vw, 480px);
-  }
+  --testo-base:clamp(.95rem,.85rem + .35vw,1.1rem);
+  --testo-piccolo:clamp(.78rem,.72rem + .25vw,.92rem);
+  --testo-sottotitolo:clamp(1rem,.9rem + .4vw,1.2rem);
+  --testo-titolo:clamp(1.5rem,1.2rem + 1.3vw,2.2rem);
+  --testo-logo:clamp(2.6rem,1.9rem + 3vw,4.4rem);
+  --testo-tagline:clamp(1.15rem,1rem + .7vw,1.6rem);
 
-  html { -webkit-text-size-adjust: 100%; }
+  --raggio:14px;
+  --raggio-foto:18px;
+  --raggio-bottone:999px;
+  --ombra-morbida:0 6px 18px rgba(0,0,0,.25);
+  --ombra-foto:0 20px 50px rgba(0,0,0,.55);
+  --ombra-forte:0 20px 60px rgba(0,0,0,.4);
 
-  body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    margin: 0;
-    color: #f7efe4;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #3a1e1e;
-    font-size: var(--testo-base);
-  }
+  --larghezza-contenuto:min(92vw,520px);
+}
 
-  /* --- SFONDO STATICO (niente foto: solo gradiente) --- */
-  #sfondo-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    background:
-      radial-gradient(circle at top, rgba(110, 54, 44, 0.72) 0%, rgba(58, 30, 30, 0.9) 46%, #2c1717 100%),
-      #3a1e1e;
-  }
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:'Georgia','Times New Roman',serif;
+  margin:0;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  color:var(--testo);
+  background-color:var(--col-marrone-scuro);
+  font-size:var(--testo-base);line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
 
-  #schermata-lingua {
-    width: 100%;
-    min-height: 100dvh; /* 'dvh' adatta l'altezza anche con le barre dei browser mobile */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    box-sizing: border-box;
-    padding: var(--spazio-m);
-    color: #ffffff;
-  }
+/* Sfondo generico (screen 2 e 3) */
+#sfondo-bg{position:fixed;inset:0;z-index:-2;
+  background:
+    radial-gradient(ellipse at top,rgba(122,31,43,.28) 0%,transparent 60%),
+    radial-gradient(ellipse at bottom,rgba(200,164,100,.10) 0%,transparent 55%),
+    linear-gradient(180deg,#2b1810 0%,#1a0f0a 100%);
+}
+#sfondo-bg::after{content:"";position:absolute;inset:0;opacity:.30;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.05  0 0 0 0 0.02  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:overlay;
+}
 
-  .schermata {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: var(--larghezza-contenuto);
-    padding: var(--spazio-xl) var(--spazio-m) var(--spazio-l);
-    margin: 0 auto;
-  }
-  .schermata.attiva { display: flex; }
+/* Schermate ------------------------------------------------ */
+.schermata{display:none;flex-direction:column;align-items:center;
+  width:100%;max-width:var(--larghezza-contenuto);
+  padding:var(--spazio-xl) var(--spazio-m) var(--spazio-l);margin:0 auto;
+  position:relative;z-index:1;
+}
+.schermata.attiva{display:flex;animation:comparsa .55s ease-out both}
+@keyframes comparsa{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeSezione{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-  .tagline {
-    font-family: 'Brush Script MT', 'Segoe Script', cursive;
-    font-size: var(--testo-tagline);
-    opacity: 0.9;
-    margin-bottom: -0.3em;
-  }
-  h1.logo {
-    font-family: 'Arial Black', Arial, sans-serif;
-    font-weight: 900;
-    font-size: var(--testo-logo);
-    letter-spacing: 1px;
-    color: #ffffff;
-    margin: 0 0 var(--spazio-xs) 0;
-    text-transform: uppercase;
-    text-align: center;
-  }
-  h2.titolo-pagina {
-    font-family: 'Arial Black', Arial, sans-serif;
-    font-weight: 900;
-    font-size: var(--testo-titolo);
-    color: #ffffff;
-    margin: 0 0 var(--spazio-m) 0;
-    text-align: center;
-  }
-  .sottotitolo {
-    font-size: var(--testo-sottotitolo);
-    margin-bottom: var(--spazio-l);
-    line-height: 1.5;
-    text-align: center;
-  }
-  .separatore {
-    width: clamp(48px, 8vw, 72px);
-    height: 3px;
-    background-color: #f7efe4;
-    opacity: 0.6;
-    border-radius: 2px;
-    margin: 0 0 var(--spazio-m) 0;
-  }
-  .bottoni {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spazio-s);
-    width: 100%;
-    max-width: 360px;
-  }
-  button.bottone {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background-color: #f7efe4;
-    color: #3a1e1e;
-    font-size: clamp(1em, 0.94em + 0.3vw, 1.15em);
-    font-weight: 700;
-    padding: clamp(14px, 2.2vw, 19px) clamp(20px, 4vw, 30px);
-    border: none;
-    border-radius: 30px;
-    font-family: inherit;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-  }
-  button.bottone:hover { background-color: #ffffff; }
-  button.bottone:active { transform: scale(0.98); }
-  button.bottone.secondario {
-    background-color: transparent;
-    color: #f7efe4;
-    border: 2px solid #f7efe4;
-  }
-  button.bottone.secondario:hover { background-color: rgba(247,239,228,0.1); }
-  .icona { font-size: 1.3em; }
+/* === SCHERMATA 1: HERO fullscreen con fotografia ========= */
+#schermata-lingua{
+  min-height:100dvh;justify-content:center;
+  padding:var(--spazio-l) var(--spazio-m);
+  max-width:none;width:100%;
+}
+.hero-foto{
+  position:fixed;inset:0;z-index:-1;
+  background:#1a0f0a url("da-franca.png") center/cover no-repeat;
+  transform:scale(1.05);
+  animation:kenburnsHero 22s ease-in-out infinite alternate;
+}
+.hero-overlay{
+  position:fixed;inset:0;z-index:-1;
+  background:
+    linear-gradient(180deg,rgba(20,10,6,.55) 0%,rgba(20,10,6,.35) 40%,rgba(20,10,6,.75) 100%),
+    radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.55) 100%);
+}
+.hero-foto,.hero-overlay{display:none}
+body.mostra-hero .hero-foto,body.mostra-hero .hero-overlay{display:block}
+body.mostra-hero #sfondo-bg{display:none}
+@keyframes kenburnsHero{
+  from{transform:scale(1.05) translate(0,0)}
+  to{transform:scale(1.15) translate(-1.5%,-1%)}
+}
 
-  a.link-testo, span.link-testo {
-    margin-top: var(--spazio-l);
-    color: #f7efe4;
-    opacity: 0.7;
-    font-size: var(--testo-piccolo);
-    text-decoration: none;
-    cursor: pointer;
-  }
-  a.link-testo:hover, span.link-testo:hover { opacity: 1; text-decoration: underline; }
+/* Tipografia ---------------------------------------------- */
+.tagline{
+  font-family:'Brush Script MT','Segoe Script',cursive;
+  font-size:var(--testo-tagline);
+  color:var(--col-oro-chiaro);opacity:.95;
+  margin:0 0 -.2em 0;text-align:center;letter-spacing:.5px;
+  text-shadow:0 2px 12px rgba(0,0,0,.55);
+}
+h1.logo{
+  font-family:'Georgia','Times New Roman',serif;font-weight:700;font-style:italic;
+  font-size:var(--testo-logo);color:var(--col-panna);
+  margin:0 0 var(--spazio-xs) 0;text-align:center;letter-spacing:1px;
+  text-shadow:0 3px 24px rgba(0,0,0,.7);
+}
+h2.titolo-pagina{
+  font-family:'Georgia',serif;font-weight:700;font-size:var(--testo-titolo);
+  color:var(--col-panna);margin:0 0 var(--spazio-s) 0;text-align:center;letter-spacing:.5px;
+}
+.sottotitolo{font-size:var(--testo-sottotitolo);margin:0 0 var(--spazio-l);text-align:center;color:var(--testo);
+  text-shadow:0 2px 10px rgba(0,0,0,.55);}
+.sottotitolo .muted{color:var(--testo-muted);font-style:italic}
+.separatore{width:clamp(70px,12vw,110px);height:2px;
+  background:linear-gradient(90deg,transparent,var(--col-oro),transparent);
+  margin:0 0 var(--spazio-m);border-radius:2px;}
 
-  .barra-nav {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-bottom: var(--spazio-xs);
-    font-size: var(--testo-piccolo);
-  }
-  .barra-nav span { opacity: 0.75; cursor: pointer; }
-  .barra-nav span:hover { opacity: 1; text-decoration: underline; }
+/* Bottoni -------------------------------------------------- */
+.bottoni{display:flex;flex-direction:column;gap:var(--spazio-s);width:100%;max-width:380px}
+button.bottone{
+  display:flex;align-items:center;justify-content:center;gap:12px;min-height:54px;
+  background:linear-gradient(180deg,var(--col-panna) 0%,var(--col-beige) 100%);
+  color:var(--col-marrone-scuro);
+  font-size:clamp(1em,.94em + .3vw,1.15em);font-weight:700;font-family:'Georgia',serif;
+  padding:clamp(14px,2.2vw,18px) clamp(20px,4vw,30px);
+  border:1px solid rgba(200,164,100,.35);border-radius:var(--raggio-bottone);
+  cursor:pointer;letter-spacing:.3px;box-shadow:var(--ombra-morbida);
+  transition:transform .15s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease;
+}
+button.bottone:hover{background:linear-gradient(180deg,#fff 0%,var(--col-panna) 100%);
+  border-color:var(--col-oro);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+button.bottone:active{transform:scale(.98)}
+button.bottone:focus-visible{outline:2px solid var(--col-oro-chiaro);outline-offset:3px}
+button.bottone.secondario{background:rgba(20,10,6,.35);color:var(--col-panna);
+  border:2px solid rgba(232,220,196,.55);box-shadow:none;backdrop-filter:blur(4px);}
+button.bottone.secondario:hover{background:rgba(20,10,6,.55);border-color:var(--col-oro)}
+.icona{font-size:1.35em;line-height:1}
 
-  .nota-info {
-    font-style: italic;
-    font-size: var(--testo-piccolo);
-    opacity: 0.85;
-    line-height: 1.5;
-    margin-bottom: var(--spazio-l);
-    text-align: center;
-  }
-  .nota-info p { margin: 0.4em 0; }
+.link-testo{margin-top:var(--spazio-l);min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  padding:8px 14px;background:none;border:none;color:var(--col-oro-chiaro);opacity:.9;
+  font-size:var(--testo-piccolo);font-family:inherit;cursor:pointer;
+  transition:opacity .2s,color .2s;text-shadow:0 1px 6px rgba(0,0,0,.5);}
+.link-testo:hover{opacity:1;color:var(--col-oro);text-decoration:underline}
+.link-testo:focus-visible{outline:2px solid var(--col-oro-chiaro);outline-offset:2px;border-radius:6px}
 
-  .sezione { 
-    width: 100%; 
-    margin-bottom: var(--spazio-l); 
-    padding-top: var(--spazio-xs);
-  }
-  .sezione h3 {
-    font-family: 'Arial Black', Arial, sans-serif;
-    font-weight: 900;
-    font-size: clamp(1.15rem, 1.05rem + 0.5vw, 1.5rem);
-    color: #ffffff;
-    margin: 0 0 var(--spazio-s) 0;
-  }
-  .voce {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-    padding: clamp(7px, 1vw, 11px) 0;
-    border-bottom: 1px solid rgba(247,239,228,0.12);
-  }
-  .voce .nome { font-size: 0.98em; }
-  .voce .prezzo { font-weight: 700; white-space: nowrap; }
+/* Nav barra */
+.barra-nav{display:flex;justify-content:space-between;align-items:center;width:100%;
+  gap:var(--spazio-s);margin-bottom:var(--spazio-s);font-size:var(--testo-piccolo)}
+.barra-nav button{
+  background:rgba(20,10,6,.55);border:1px solid rgba(200,164,100,.30);color:var(--col-oro-chiaro);
+  padding:8px 14px;min-height:40px;border-radius:999px;font-family:inherit;font-size:var(--testo-piccolo);
+  cursor:pointer;backdrop-filter:blur(6px);
+  transition:background .2s,color .2s,border-color .2s;
+}
+.barra-nav button:hover{background:rgba(200,164,100,.18);color:var(--col-panna);border-color:var(--col-oro)}
+.barra-nav button:focus-visible{outline:2px solid var(--col-oro-chiaro);outline-offset:2px}
 
-  .tabella-vino { width: 100%; }
-  .tabella-vino .intestazione {
-    display: flex;
-    justify-content: flex-end;
-    gap: clamp(10px, 2vw, 18px);
-    font-size: var(--testo-piccolo);
-    font-weight: 700;
-    opacity: 0.75;
-    padding: 4px 0 8px 0;
-  }
-  .tabella-vino .intestazione span { width: 58px; text-align: right; }
-  .tabella-vino .voce-vino {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: clamp(7px, 1vw, 11px) 0;
-    border-bottom: 1px solid rgba(247,239,228,0.12);
-    gap: 12px;
-  }
-  .tabella-vino .voce-vino .nome { flex: 1; font-size: 0.98em; }
-  .tabella-vino .voce-vino .prezzi { display: flex; gap: clamp(10px, 2vw, 18px); }
-  .tabella-vino .voce-vino .prezzi span { width: 58px; text-align: right; font-weight: 700; white-space: nowrap; }
+/* === SCHERMATA 2: sfondo legno rustico ==================== */
+/* Motivazione: la texture del legno rustico è il compromesso ideale tra
+   atmosfera trattoria e leggibilità: superficie uniforme, tonalità calda
+   coerente con la palette, contrasto sufficiente per i bottoni chiari.
+   Un vigneto o una cantina risulterebbero troppo dettagliati; una tovaglia
+   a quadri sottrarrebbe leggibilità. Il legno è "quiete" visiva. */
+body.mostra-categoria::before{
+  content:"";position:fixed;inset:0;z-index:-1;
+  background:#2b1810 url("bg-categoria.jpg") center/cover no-repeat fixed;
+  filter:blur(3px) brightness(.55) saturate(.9);
+  transform:scale(1.06);
+}
+body.mostra-categoria::after{
+  content:"";position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(ellipse at center,rgba(20,10,6,.15) 0%,rgba(20,10,6,.75) 100%),
+    linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.55) 100%);
+}
+body.mostra-categoria #sfondo-bg{display:none}
 
-  .coperto {
-    margin-top: var(--spazio-s);
-    text-align: center;
-    font-weight: 700;
-    opacity: 0.9;
-  }
+/* === SCHERMATA 3: contenuto menu ========================== */
+.corpo-contenuto{width:100%}
+.nota-info{font-style:italic;font-size:var(--testo-piccolo);color:var(--testo-muted);
+  line-height:1.55;margin:0 0 var(--spazio-l);text-align:center;max-width:60ch;align-self:center;}
+.nota-info p{margin:.4em 0}
+.avviso-pranzo{font-size:var(--testo-piccolo);font-style:italic;color:var(--col-oro-chiaro);
+  text-align:center;padding:10px 14px;margin:0 0 var(--spazio-m);
+  background:rgba(200,164,100,.08);border:1px solid rgba(200,164,100,.25);border-radius:var(--raggio);}
 
-  .torna-inizio {
-    margin-top: var(--spazio-m);
-    text-align: center;
-  }
+.sezione{width:100%;margin-bottom:var(--spazio-l);padding:var(--spazio-m);
+  background:rgba(20,10,6,.55);border:1px solid rgba(200,164,100,.15);
+  border-radius:var(--raggio);backdrop-filter:blur(6px);
+  animation:fadeSezione .5s ease-out both;}
+.sezione h3{font-family:'Georgia',serif;font-weight:700;font-style:italic;
+  font-size:clamp(1.2rem,1.1rem + .5vw,1.55rem);color:var(--col-oro-chiaro);
+  margin:0 0 var(--spazio-s);padding-bottom:8px;
+  border-bottom:1px solid var(--divisore);letter-spacing:.3px;}
+.voce{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+  padding:clamp(9px,1.2vw,13px) 0;border-bottom:1px dashed var(--divisore);}
+.voce:last-child{border-bottom:none}
+.voce .nome{font-size:.98em;color:var(--testo)}
+.voce .prezzo{font-weight:700;color:var(--col-oro-chiaro);white-space:nowrap;font-variant-numeric:tabular-nums}
 
-  .avviso-pranzo {
-    font-size: var(--testo-piccolo);
-    font-style: italic;
-    opacity: 0.75;
-    text-align: center;
-    margin-bottom: var(--spazio-l);
-  }
+.tabella-vino{width:100%}
+.tabella-vino .intestazione{display:flex;justify-content:flex-end;gap:clamp(10px,2vw,18px);
+  font-size:var(--testo-piccolo);font-weight:700;color:var(--testo-muted);
+  padding:4px 0 8px 0;border-bottom:1px solid var(--divisore);
+  text-transform:uppercase;letter-spacing:.5px;}
+.tabella-vino .intestazione span{width:58px;text-align:right}
+.tabella-vino .voce-vino{display:flex;justify-content:space-between;align-items:baseline;
+  padding:clamp(9px,1.2vw,13px) 0;border-bottom:1px dashed var(--divisore);gap:14px;}
+.tabella-vino .voce-vino:last-child{border-bottom:none}
+.tabella-vino .voce-vino .nome{flex:1;font-size:.98em}
+.tabella-vino .voce-vino .prezzi{display:flex;gap:clamp(10px,2vw,18px)}
+.tabella-vino .voce-vino .prezzi span{width:58px;text-align:right;font-weight:700;
+  color:var(--col-oro-chiaro);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.coperto{margin-top:var(--spazio-s);padding:var(--spazio-s);text-align:center;font-weight:700;
+  color:var(--col-oro-chiaro);background:rgba(200,164,100,.08);
+  border-radius:var(--raggio);border:1px solid rgba(200,164,100,.2);}
+.torna-inizio{margin-top:var(--spazio-m);text-align:center;width:100%}
 
-  /* --- ADATTAMENTO PER TABLET --- */
-  @media (min-width: 700px) {
-    :root {
-      --larghezza-contenuto: min(80vw, 620px);
-    }
-    .schermata {
-      padding-top: var(--spazio-xl);
-      padding-bottom: var(--spazio-xl);
-    }
-    .bottoni { max-width: 400px; }
-  }
+/* === Fotografie storytelling tra le sezioni =============== */
+.foto-sezione{
+  position:relative;width:100%;margin:var(--spazio-l) 0;
+  border-radius:var(--raggio-foto);overflow:hidden;
+  box-shadow:var(--ombra-foto);
+  aspect-ratio:16/10;
+  background:#1a0f0a;
+  opacity:0;transform:translateY(30px);
+  transition:opacity .9s ease,transform 1.1s ease;
+  will-change:opacity,transform;
+}
+.foto-sezione.visibile{opacity:1;transform:translateY(0)}
+.foto-sezione img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  display:block;
+  transform:scale(1.05);
+  transition:transform 1.2s ease;
+  will-change:transform;
+}
+.foto-sezione.visibile img{
+  animation:kenburns 18s ease-in-out infinite alternate;
+}
+@keyframes kenburns{
+  0%{transform:scale(1.05) translate(0,0)}
+  100%{transform:scale(1.18) translate(-2%,-1.5%)}
+}
+.foto-sezione::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(20,10,6,.15) 0%,rgba(20,10,6,.05) 40%,rgba(20,10,6,.55) 100%);
+}
+.foto-sezione .didascalia{
+  position:absolute;left:0;right:0;bottom:0;padding:var(--spazio-m);
+  font-family:'Brush Script MT','Segoe Script',cursive;
+  color:var(--col-panna);
+  font-size:clamp(1.1rem,1rem + .6vw,1.6rem);
+  text-shadow:0 2px 12px rgba(0,0,0,.75);
+  z-index:1;letter-spacing:.5px;
+}
 
-  /* --- ADATTAMENTO PER DESKTOP / SCHERMI GRANDI --- */
-  @media (min-width: 1024px) {
-    :root {
-      --larghezza-contenuto: min(60vw, 760px);
-    }
-    body { padding: var(--spazio-l) 0; }
-    .schermata {
-      border-radius: 18px;
-      background: rgba(0, 0, 0, 0.12);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    }
-    .bottoni { max-width: 440px; }
-    button.bottone:hover { transform: translateY(-1px); }
+/* Responsive ---------------------------------------------- */
+@media (min-width:700px){
+  :root{--larghezza-contenuto:min(85vw,640px)}
+  .bottoni{max-width:420px}
+  .foto-sezione{aspect-ratio:16/9}
+}
+@media (min-width:1024px){
+  :root{--larghezza-contenuto:min(70vw,780px)}
+  body{padding:var(--spazio-l) 0}
+  .schermata:not(#schermata-lingua){
+    border-radius:20px;background:rgba(0,0,0,.25);
+    box-shadow:var(--ombra-forte);border:1px solid rgba(200,164,100,.15);
   }
+  .bottoni{max-width:460px}
+  button.bottone:hover{transform:translateY(-2px)}
+  .foto-sezione{aspect-ratio:21/9}
+}
+@media (min-width:1440px){:root{--larghezza-contenuto:min(55vw,880px)}}
+@media (max-height:480px) and (orientation:landscape){
+  #schermata-lingua{padding:var(--spazio-s)}
+  .schermata{padding-top:var(--spazio-m);padding-bottom:var(--spazio-m)}
+  .sottotitolo{margin-bottom:var(--spazio-s)}
+}
 
-  /* --- ADATTAMENTO PER SCHERMI MOLTO GRANDI --- */
-  @media (min-width: 1440px) {
-    :root {
-      --larghezza-contenuto: min(45vw, 860px);
-    }
-  }
+/* iOS: background-attachment:fixed non è affidabile */
+@supports (-webkit-touch-callout:none){
+  body.mostra-categoria::before{background-attachment:scroll}
+}
 
-  /* --- ORIENTAMENTO ORIZZONTALE SU MOBILE (schermo basso) --- */
-  @media (max-height: 480px) and (orientation: landscape) {
-    #schermata-lingua { padding: var(--spazio-s); }
-    .schermata { padding-top: var(--spazio-m); padding-bottom: var(--spazio-m); }
-    .tagline { margin-bottom: 0; }
-    .sottotitolo { margin-bottom: var(--spazio-s); }
+/* Riduzione movimento */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important;
   }
+  .hero-foto,.foto-sezione.visibile img{animation:none!important;transform:none!important}
+  .foto-sezione{opacity:1;transform:none}
+}
 </style>
 </head>
-<body>
+<body class="mostra-hero">
+  <div id="sfondo-bg" aria-hidden="true"></div>
+  <div class="hero-foto" aria-hidden="true"></div>
+  <div class="hero-overlay" aria-hidden="true"></div>
 
-<!-- Livello dello sfondo statico -->
-<div id="sfondo-bg"></div>
+  <!-- SCHERMATA 1: scelta lingua -->
+  <section id="schermata-lingua" class="schermata attiva" aria-label="Selezione lingua">
+    <p class="tagline">Trattoria</p>
+    <h1 class="logo">da Franca</h1>
+    <div class="separatore" aria-hidden="true"></div>
+    <p class="sottotitolo">Scegli la lingua<br><span class="muted">Choose language</span></p>
+    <div class="bottoni">
+      <button type="button" class="bottone" onclick="selezionaLingua('it')">
+        <span class="icona" aria-hidden="true">🇮🇹</span> Italiano
+      </button>
+      <button type="button" class="bottone secondario" onclick="selezionaLingua('en')">
+        <span class="icona" aria-hidden="true">🇬🇧</span> English
+      </button>
+    </div>
+  </section>
 
-<!-- SCHERMATA 1: scelta lingua -->
-<div id="schermata-lingua" class="schermata attiva">
-  <p class="tagline">Trattoria da Franca</p>
-  <h1 class="logo">Menu'</h1>
-  <div class="separatore"></div>
-  <p class="sottotitolo">Scegli la lingua<br>Choose language</p>
+  <!-- SCHERMATA 2: scelta categoria -->
+  <section id="schermata-categoria" class="schermata" aria-label="Categorie">
+    <p class="tagline">Trattoria da Franca</p>
+    <h2 class="titolo-pagina" id="cat-titolo"></h2>
+    <div class="separatore" aria-hidden="true"></div>
+    <div class="bottoni">
+      <button type="button" class="bottone" onclick="mostraContenuto('piatti')">
+        <span class="icona" aria-hidden="true">🍽️</span> <span id="cat-piatti"></span>
+      </button>
+      <button type="button" class="bottone" onclick="mostraContenuto('vini')">
+        <span class="icona" aria-hidden="true">🍷</span> <span id="cat-vini"></span>
+      </button>
+      <button type="button" class="bottone" onclick="mostraContenuto('birre')">
+        <span class="icona" aria-hidden="true">🍺</span> <span id="cat-birre"></span>
+      </button>
+    </div>
+    <button type="button" class="link-testo" onclick="mostraLingua()" id="cat-cambia-lingua"></button>
+  </section>
 
-  <div class="bottoni">
-    <button class="bottone" onclick="selezionaLingua('it')">
-      <span class="icona">🇮🇹</span> Italiano
-    </button>
-    <button class="bottone secondario" onclick="selezionaLingua('en')">
-      <span class="icona">🇬🇧</span> English
-    </button>
-  </div>
-</div>
-
-<!-- SCHERMATA 2: scelta categoria -->
-<div id="schermata-categoria" class="schermata">
-  <p class="tagline">Trattoria da Franca</p>
-  <h2 class="titolo-pagina" id="cat-titolo"></h2>
-  <div class="bottoni">
-    <button class="bottone" onclick="mostraContenuto('piatti')">
-      <span class="icona">🍽️</span> <span id="cat-piatti"></span>
-    </button>
-    <button class="bottone" onclick="mostraContenuto('vini')">
-      <span class="icona">🍷</span> <span id="cat-vini"></span>
-    </button>
-    <button class="bottone" onclick="mostraContenuto('birre')">
-      <span class="icona">🍺</span> <span id="cat-birre"></span>
-    </button>
-  </div>
-  <span class="link-testo" onclick="mostraLingua()" id="cat-cambia-lingua"></span>
-</div>
-
-<!-- SCHERMATA 3: contenuto (piatti / vini / birre) -->
-<div id="schermata-contenuto" class="schermata">
-  <div class="barra-nav">
-    <span onclick="mostraCategoria()" id="nav-indietro"></span>
-    <span onclick="mostraLingua()" id="nav-lingua"></span>
-  </div>
-  <p class="tagline">Trattoria da Franca</p>
-  <h2 class="titolo-pagina" id="cont-titolo"></h2>
-  <div id="cont-nota" class="nota-info"></div>
-  <div id="cont-corpo" style="width:100%;"></div>
-  <div class="torna-inizio">
-    <span class="link-testo" onclick="mostraCategoria()" id="cont-torna"></span>
-  </div>
-</div>
+  <!-- SCHERMATA 3: contenuto -->
+  <section id="schermata-contenuto" class="schermata" aria-label="Contenuto menu">
+    <nav class="barra-nav" aria-label="Navigazione">
+      <button type="button" onclick="mostraCategoria()" id="nav-indietro"></button>
+      <button type="button" onclick="mostraLingua()" id="nav-lingua"></button>
+    </nav>
+    <p class="tagline">Trattoria da Franca</p>
+    <h2 class="titolo-pagina" id="cont-titolo"></h2>
+    <div class="separatore" aria-hidden="true"></div>
+    <div id="cont-nota" class="nota-info"></div>
+    <div id="cont-corpo" class="corpo-contenuto"></div>
+    <div class="torna-inizio">
+      <button type="button" class="link-testo" onclick="mostraCategoria()" id="cont-torna"></button>
+    </div>
+  </section>
 
 <script>
+'use strict';
+
 let linguaCorrente = 'it';
 
 /* ---------- TESTI INTERFACCIA ---------- */
 const ui = {
   it: {
     catTitolo: "Cosa vuoi consultare?",
-    piatti: "Piatti",
-    vini: "Lista dei Vini",
-    birre: "Birre in Bottiglia",
-    cambiaLingua: "← Cambia lingua",
-    indietro: "← Categorie",
+    piatti: "Piatti", vini: "Lista dei Vini", birre: "Birre in Bottiglia",
+    cambiaLingua: "← Cambia lingua", indietro: "← Categorie",
     tornaCategorie: "← Torna alle categorie",
     avvisoPranzo: "Alcuni piatti non sono disponibili a pranzo (11:30–15:00)"
   },
   en: {
     catTitolo: "What would you like to see?",
-    piatti: "Dishes",
-    vini: "Wine List",
-    birre: "Bottled Beers",
-    cambiaLingua: "← Change language",
-    indietro: "← Categories",
+    piatti: "Dishes", vini: "Wine List", birre: "Bottled Beers",
+    cambiaLingua: "← Change language", indietro: "← Categories",
     tornaCategorie: "← Back to categories",
     avvisoPranzo: "Some dishes are not available at lunch (11:30 AM–3:00 PM)"
   }
 };
+
+/* ---------- MAPPA IMMAGINI STORYTELLING ----------
+   Chiavi ricercate nel titolo della sezione (case-insensitive). */
+const immaginiSezioni = [
+  { chiavi:["antipast","starter"],           img:"antipasti.webp", didascalia:{it:"Taglieri della tradizione", en:"Traditional charcuterie boards"} },
+  { chiavi:["prim","first course","risotto"],img:"primi.webp",     didascalia:{it:"Pasta fresca fatta in casa",  en:"Homemade fresh pasta"} },
+  { chiavi:["secondi","main course","grill","brace"], img:"secondi.webp", didascalia:{it:"Dalla brace, come una volta", en:"From the grill, as it once was"} },
+  { chiavi:["dessert"],                      img:"desserts.webp",   didascalia:{it:"I dolci della casa",           en:"House desserts"} },
+  { chiavi:["vino","wine","bollicin","bianch","rosat","rossi","lambrusc","sparkl","white wine","rosé","red wine"], img:"vini.jpg", didascalia:{it:"Dalla nostra cantina", en:"From our cellar"} },
+  { chiavi:["birr","beer"],                  img:"birre.jpg",     didascalia:{it:"Birre artigianali",            en:"Craft beers"} }
+];
+function immaginePer(titolo){
+  const t = (titolo||"").toLowerCase();
+  return immaginiSezioni.find(m => m.chiavi.some(k => t.includes(k)));
+}
 
 /* ---------- DATI MENU PIATTI ---------- */
 const piattiData = {
@@ -689,173 +730,158 @@ const birreData = {
   }
 };
 
-/* ---------- FASCIA ORARIA PRANZO (11:30 - 15:00) ---------- */
-function isOrarioPranzo() {
-  const ora = new Date();
-  const minutiTotali = ora.getHours() * 60 + ora.getMinutes();
-  const inizioPranzo = 11 * 60 + 30;  // 11:30
-  const finePranzo = 15 * 60;         // 15:00
-  return minutiTotali >= inizioPranzo && minutiTotali < finePranzo;
+/* ---------- ORARI PRANZO ---------- */
+function isOrarioPranzo(){
+  const ora=new Date();const min=ora.getHours()*60+ora.getMinutes();
+  return min>=(11*60+30)&&min<(15*60);
 }
-
-/* ---------- GIORNO DELLA SETTIMANA CORRENTE ---------- */
-function giornoCorrente() {
-  const codici = ['dom','lun','mar','mer','gio','ven','sab'];
-  return codici[new Date().getDay()];
-}
-
-/* ---------- VERIFICA SE UN PIATTO VA NASCOSTO ORA ---------- */
-function vaNascostoAPranzo(giorniNascondi) {
-  if (!giorniNascondi) return false;
-  if (giorniNascondi === true) return isOrarioPranzo();
-  if (!isOrarioPranzo()) return false;
-  return giorniNascondi.includes(giornoCorrente());
+function giornoCorrente(){return ['dom','lun','mar','mer','gio','ven','sab'][new Date().getDay()];}
+function vaNascostoAPranzo(g){
+  if(!g)return false;
+  if(g===true)return isOrarioPranzo();
+  if(!isOrarioPranzo())return false;
+  return g.includes(giornoCorrente());
 }
 
 /* ---------- NAVIGAZIONE ---------- */
-function nascondiTutte() {
-  document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
+function nascondiTutte(){document.querySelectorAll('.schermata').forEach(s=>s.classList.remove('attiva'));}
+function aggiornaBodyClass(stato){
+  document.body.classList.remove('mostra-hero','mostra-categoria','mostra-contenuto');
+  document.body.classList.add('mostra-'+stato);
 }
-
-function selezionaLingua(lingua) {
-  linguaCorrente = lingua;
+function selezionaLingua(l){
+  linguaCorrente=l;aggiornaTestiCategoria();
+  nascondiTutte();document.getElementById('schermata-categoria').classList.add('attiva');
+  aggiornaBodyClass('categoria');window.scrollTo(0,0);
+}
+function mostraLingua(){
+  nascondiTutte();document.getElementById('schermata-lingua').classList.add('attiva');
+  aggiornaBodyClass('hero');window.scrollTo(0,0);
+}
+function mostraCategoria(){
   aggiornaTestiCategoria();
-  nascondiTutte();
-  document.getElementById('schermata-categoria').classList.add('attiva');
+  nascondiTutte();document.getElementById('schermata-categoria').classList.add('attiva');
+  aggiornaBodyClass('categoria');window.scrollTo(0,0);
+}
+function aggiornaTestiCategoria(){
+  const t=ui[linguaCorrente];
+  document.getElementById('cat-titolo').textContent=t.catTitolo;
+  document.getElementById('cat-piatti').textContent=t.piatti;
+  document.getElementById('cat-vini').textContent=t.vini;
+  document.getElementById('cat-birre').textContent=t.birre;
+  document.getElementById('cat-cambia-lingua').textContent=t.cambiaLingua;
+  document.documentElement.lang=linguaCorrente;
 }
 
-function mostraLingua() {
-  nascondiTutte();
-  document.getElementById('schermata-lingua').classList.add('attiva');
-}
-
-function mostraCategoria() {
-  aggiornaTestiCategoria();
-  nascondiTutte();
-  document.getElementById('schermata-categoria').classList.add('attiva');
-}
-
-function aggiornaTestiCategoria() {
-  const t = ui[linguaCorrente];
-  document.getElementById('cat-titolo').textContent = t.catTitolo;
-  document.getElementById('cat-piatti').textContent = t.piatti;
-  document.getElementById('cat-vini').textContent = t.vini;
-  document.getElementById('cat-birre').textContent = t.birre;
-  document.getElementById('cat-cambia-lingua').textContent = t.cambiaLingua;
-}
-
-function mostraContenuto(tipo) {
-  const t = ui[linguaCorrente];
-  let dati;
-  if (tipo === 'piatti') dati = piattiData[linguaCorrente];
-  if (tipo === 'vini') dati = viniData[linguaCorrente];
-  if (tipo === 'birre') dati = birreData[linguaCorrente];
-
-  document.getElementById('nav-indietro').textContent = t.indietro;
-  document.getElementById('nav-lingua').textContent = t.cambiaLingua;
-  document.getElementById('cont-torna').textContent = t.tornaCategorie;
-  document.getElementById('cont-titolo').textContent = dati.titolo;
-
-  const notaEl = document.getElementById('cont-nota');
-  notaEl.innerHTML = '';
-  if (dati.nota) {
-    dati.nota.forEach(p => {
-      const el = document.createElement('p');
-      el.textContent = p;
-      notaEl.appendChild(el);
+/* ---------- OSSERVATORE STORYTELLING ---------- */
+let osservatoreFoto=null;
+function creaOsservatore(){
+  if(osservatoreFoto)osservatoreFoto.disconnect();
+  if(!('IntersectionObserver' in window))return null;
+  osservatoreFoto=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){e.target.classList.add('visibile');}
+      else{e.target.classList.remove('visibile');}
     });
-  }
+  },{root:null,rootMargin:'-10% 0px -10% 0px',threshold:.15});
+  return osservatoreFoto;
+}
 
-  const pranzoAttivo = isOrarioPranzo();
-  let almenoUnoNascosto = false;
+/* ---------- RENDER CONTENUTO ---------- */
+function mostraContenuto(tipo){
+  const t=ui[linguaCorrente];
+  const dataset={piatti:piattiData,vini:viniData,birre:birreData}[tipo];
+  if(!dataset)return;
+  const dati=dataset[linguaCorrente];
 
-  const corpo = document.getElementById('cont-corpo');
-  corpo.innerHTML = '';
+  document.getElementById('nav-indietro').textContent=t.indietro;
+  document.getElementById('nav-lingua').textContent=t.cambiaLingua;
+  document.getElementById('cont-torna').textContent=t.tornaCategorie;
+  document.getElementById('cont-titolo').textContent=dati.titolo;
 
-  if (tipo === 'piatti' && pranzoAttivo) {
-    dati.sezioni.forEach(sez => {
-      if (!sez.tabella && sez.items.some(it => vaNascostoAPranzo(it[2]))) almenoUnoNascosto = true;
-    });
-    if (almenoUnoNascosto) {
-      const avviso = document.createElement('div');
-      avviso.className = 'avviso-pranzo';
-      avviso.textContent = t.avvisoPranzo;
-      corpo.appendChild(avviso);
+  const notaEl=document.getElementById('cont-nota');notaEl.innerHTML='';
+  if(dati.nota){dati.nota.forEach(p=>{const el=document.createElement('p');el.textContent=p;notaEl.appendChild(el);});}
+
+  const corpo=document.getElementById('cont-corpo');corpo.innerHTML='';
+
+  if(tipo==='piatti'&&isOrarioPranzo()){
+    const qualcosaNascosto=dati.sezioni.some(sez=>!sez.tabella&&sez.items.some(it=>vaNascostoAPranzo(it[2])));
+    if(qualcosaNascosto){
+      const av=document.createElement('div');av.className='avviso-pranzo';av.textContent=t.avvisoPranzo;
+      corpo.appendChild(av);
     }
   }
 
-  dati.sezioni.forEach(sez => {
-    const sezDiv = document.createElement('div');
-    sezDiv.className = 'sezione';
+  const osservatore=creaOsservatore();
+  const immaginiUsate=new Set();
 
-    const h3 = document.createElement('h3');
-    h3.textContent = sez.titolo;
-    sezDiv.appendChild(h3);
+  dati.sezioni.forEach(sez=>{
+    // Inserisce la fotografia storytelling PRIMA della sezione (una volta per tipologia)
+    const map=immaginePer(sez.titolo);
+    if(map && !immaginiUsate.has(map.img)){
+      immaginiUsate.add(map.img);
+      const figura=document.createElement('figure');
+      figura.className='foto-sezione';
+      const img=document.createElement('img');
+      img.src=map.img;
+      img.alt=sez.titolo;
+      img.loading='lazy';
+      img.decoding='async';
+      figura.appendChild(img);
+      const cap=document.createElement('figcaption');
+      cap.className='didascalia';
+      cap.textContent=map.didascalia[linguaCorrente]||'';
+      figura.appendChild(cap);
+      corpo.appendChild(figura);
+      if(osservatore)osservatore.observe(figura);
+    }
 
-    if (sez.tabella) {
-      const tab = document.createElement('div');
-      tab.className = 'tabella-vino';
-      const intest = document.createElement('div');
-      intest.className = 'intestazione';
-      sez.colonne.forEach(c => {
-        const s = document.createElement('span');
-        s.textContent = c;
-        intest.appendChild(s);
-      });
+    const sezDiv=document.createElement('section');sezDiv.className='sezione';
+    const h3=document.createElement('h3');h3.textContent=sez.titolo;sezDiv.appendChild(h3);
+
+    if(sez.tabella){
+      const tab=document.createElement('div');tab.className='tabella-vino';
+      const intest=document.createElement('div');intest.className='intestazione';
+      sez.colonne.forEach(c=>{const s=document.createElement('span');s.textContent=c;intest.appendChild(s);});
       tab.appendChild(intest);
-      sez.items.forEach(([nome, prezzi]) => {
-        const riga = document.createElement('div');
-        riga.className = 'voce-vino';
-        const nomeEl = document.createElement('span');
-        nomeEl.className = 'nome';
-        nomeEl.textContent = nome;
-        const prezziEl = document.createElement('div');
-        prezziEl.className = 'prezzi';
-        prezzi.forEach(p => {
-          const s = document.createElement('span');
-          s.textContent = p;
-          prezziEl.appendChild(s);
-        });
-        riga.appendChild(nomeEl);
-        riga.appendChild(prezziEl);
-        tab.appendChild(riga);
+      sez.items.forEach(([nome,prezzi])=>{
+        const riga=document.createElement('div');riga.className='voce-vino';
+        const n=document.createElement('span');n.className='nome';n.textContent=nome;
+        const p=document.createElement('div');p.className='prezzi';
+        prezzi.forEach(pp=>{const s=document.createElement('span');s.textContent=pp;p.appendChild(s);});
+        riga.appendChild(n);riga.appendChild(p);tab.appendChild(riga);
       });
-      sezDiv.appendChild(tab);
+      sezDiv.appendChild(tab);corpo.appendChild(sezDiv);
     } else {
-      let visibili = 0;
-      sez.items.forEach(([nome, prezzo, giorniNascondi]) => {
-        if (tipo === 'piatti' && vaNascostoAPranzo(giorniNascondi)) return;
-        visibili++;
-        const riga = document.createElement('div');
-        riga.className = 'voce';
-        const nomeEl = document.createElement('span');
-        nomeEl.className = 'nome';
-        nomeEl.textContent = nome;
-        const prezzoEl = document.createElement('span');
-        prezzoEl.className = 'prezzo';
-        prezzoEl.textContent = prezzo;
-        riga.appendChild(nomeEl);
-        riga.appendChild(prezzoEl);
-        sezDiv.appendChild(riga);
+      let vis=0;
+      sez.items.forEach(([nome,prezzo,g])=>{
+        if(tipo==='piatti'&&vaNascostoAPranzo(g))return;
+        vis++;
+        const riga=document.createElement('div');riga.className='voce';
+        const n=document.createElement('span');n.className='nome';n.textContent=nome;
+        const p=document.createElement('span');p.className='prezzo';p.textContent=prezzo;
+        riga.appendChild(n);riga.appendChild(p);sezDiv.appendChild(riga);
       });
-      if (visibili === 0) return;
+      if(vis>0)corpo.appendChild(sezDiv);
     }
-
-    corpo.appendChild(sezDiv);
   });
 
-  if (dati.coperto) {
-    const cop = document.createElement('div');
-    cop.className = 'coperto';
-    cop.textContent = dati.coperto;
-    corpo.appendChild(cop);
+  if(dati.coperto){
+    const c=document.createElement('div');c.className='coperto';c.textContent=dati.coperto;
+    corpo.appendChild(c);
   }
 
   nascondiTutte();
   document.getElementById('schermata-contenuto').classList.add('attiva');
-  window.scrollTo(0, 0);
+  aggiornaBodyClass('contenuto');
+  window.scrollTo(0,0);
 }
-</script>
 
+/* Espone le funzioni chiamate dagli onclick */
+window.selezionaLingua=selezionaLingua;
+window.mostraLingua=mostraLingua;
+window.mostraCategoria=mostraCategoria;
+window.mostraContenuto=mostraContenuto;
+</script>
 </body>
 </html>
