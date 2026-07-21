@@ -6,69 +6,120 @@
 <title>Trattoria da Franca - Menu</title>
 <style>
   * { box-sizing: border-box; }
+
+  :root {
+    /* Scala fluida: cambia in base alla larghezza reale del viewport,
+       cosi' su telefono, tablet e desktop le proporzioni restano coerenti */
+    --spazio-xs: clamp(6px, 1vw, 10px);
+    --spazio-s: clamp(10px, 1.6vw, 16px);
+    --spazio-m: clamp(16px, 2.6vw, 26px);
+    --spazio-l: clamp(24px, 4vw, 44px);
+    --spazio-xl: clamp(32px, 6vw, 64px);
+
+    --testo-base: clamp(0.95rem, 0.85rem + 0.35vw, 1.1rem);
+    --testo-sottotitolo: clamp(1rem, 0.9rem + 0.4vw, 1.2rem);
+    --testo-titolo: clamp(1.4rem, 1.15rem + 1.2vw, 2rem);
+    --testo-logo: clamp(2rem, 1.5rem + 2.2vw, 3.2rem);
+    --testo-tagline: clamp(1.15rem, 1rem + 0.7vw, 1.6rem);
+    --testo-piccolo: clamp(0.78rem, 0.72rem + 0.25vw, 0.92rem);
+
+    --larghezza-contenuto: min(92vw, 480px);
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
   body {
     font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
-    background-color: #3a1e1e;
     color: #f7efe4;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-color: #3a1e1e;
+    font-size: var(--testo-base);
   }
+
+  /* --- SFONDO STATICO (niente foto: solo gradiente) --- */
+  #sfondo-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background:
+      radial-gradient(circle at top, rgba(110, 54, 44, 0.72) 0%, rgba(58, 30, 30, 0.9) 46%, #2c1717 100%),
+      #3a1e1e;
+  }
+
+  #schermata-lingua {
+    width: 100%;
+    min-height: 100dvh; /* 'dvh' adatta l'altezza anche con le barre dei browser mobile */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: var(--spazio-m);
+    color: #ffffff;
+  }
+
   .schermata {
     display: none;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 480px;
-    padding: 40px 24px 60px;
+    max-width: var(--larghezza-contenuto);
+    padding: var(--spazio-xl) var(--spazio-m) var(--spazio-l);
+    margin: 0 auto;
   }
   .schermata.attiva { display: flex; }
 
   .tagline {
     font-family: 'Brush Script MT', 'Segoe Script', cursive;
-    font-size: 1.5em;
+    font-size: var(--testo-tagline);
     opacity: 0.9;
-    margin-bottom: -8px;
+    margin-bottom: -0.3em;
   }
   h1.logo {
     font-family: 'Arial Black', Arial, sans-serif;
     font-weight: 900;
-    font-size: 2.8em;
+    font-size: var(--testo-logo);
     letter-spacing: 1px;
     color: #ffffff;
-    margin: 0 0 10px 0;
+    margin: 0 0 var(--spazio-xs) 0;
     text-transform: uppercase;
+    text-align: center;
   }
   h2.titolo-pagina {
     font-family: 'Arial Black', Arial, sans-serif;
     font-weight: 900;
-    font-size: 1.7em;
+    font-size: var(--testo-titolo);
     color: #ffffff;
-    margin: 0 0 24px 0;
+    margin: 0 0 var(--spazio-m) 0;
     text-align: center;
   }
   .sottotitolo {
-    font-size: 1.1em;
-    margin-bottom: 30px;
+    font-size: var(--testo-sottotitolo);
+    margin-bottom: var(--spazio-l);
     line-height: 1.5;
     text-align: center;
   }
   .separatore {
-    width: 60px;
+    width: clamp(48px, 8vw, 72px);
     height: 3px;
     background-color: #f7efe4;
     opacity: 0.6;
     border-radius: 2px;
-    margin: 0 0 26px 0;
+    margin: 0 0 var(--spazio-m) 0;
   }
   .bottoni {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--spazio-s);
     width: 100%;
-    max-width: 320px;
+    max-width: 360px;
   }
   button.bottone {
     display: flex;
@@ -77,9 +128,9 @@
     gap: 12px;
     background-color: #f7efe4;
     color: #3a1e1e;
-    font-size: 1.1em;
+    font-size: clamp(1em, 0.94em + 0.3vw, 1.15em);
     font-weight: 700;
-    padding: 17px 28px;
+    padding: clamp(14px, 2.2vw, 19px) clamp(20px, 4vw, 30px);
     border: none;
     border-radius: 30px;
     font-family: inherit;
@@ -98,10 +149,10 @@
   .icona { font-size: 1.3em; }
 
   a.link-testo, span.link-testo {
-    margin-top: 30px;
+    margin-top: var(--spazio-l);
     color: #f7efe4;
     opacity: 0.7;
-    font-size: 0.9em;
+    font-size: var(--testo-piccolo);
     text-decoration: none;
     cursor: pointer;
   }
@@ -111,37 +162,40 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
-    max-width: 480px;
-    margin-bottom: 8px;
-    font-size: 0.9em;
+    margin-bottom: var(--spazio-xs);
+    font-size: var(--testo-piccolo);
   }
   .barra-nav span { opacity: 0.75; cursor: pointer; }
   .barra-nav span:hover { opacity: 1; text-decoration: underline; }
 
   .nota-info {
     font-style: italic;
-    font-size: 0.85em;
+    font-size: var(--testo-piccolo);
     opacity: 0.85;
     line-height: 1.5;
-    margin-bottom: 28px;
+    margin-bottom: var(--spazio-l);
     text-align: center;
   }
-  .nota-info p { margin: 6px 0; }
+  .nota-info p { margin: 0.4em 0; }
 
-  .sezione { width: 100%; margin-bottom: 30px; }
+  .sezione { 
+    width: 100%; 
+    margin-bottom: var(--spazio-l); 
+    padding-top: var(--spazio-xs);
+  }
   .sezione h3 {
     font-family: 'Arial Black', Arial, sans-serif;
     font-weight: 900;
-    font-size: 1.35em;
+    font-size: clamp(1.15rem, 1.05rem + 0.5vw, 1.5rem);
     color: #ffffff;
-    margin: 0 0 14px 0;
+    margin: 0 0 var(--spazio-s) 0;
   }
   .voce {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 12px;
-    padding: 9px 0;
+    padding: clamp(7px, 1vw, 11px) 0;
     border-bottom: 1px solid rgba(247,239,228,0.12);
   }
   .voce .nome { font-size: 0.98em; }
@@ -151,8 +205,8 @@
   .tabella-vino .intestazione {
     display: flex;
     justify-content: flex-end;
-    gap: 18px;
-    font-size: 0.8em;
+    gap: clamp(10px, 2vw, 18px);
+    font-size: var(--testo-piccolo);
     font-weight: 700;
     opacity: 0.75;
     padding: 4px 0 8px 0;
@@ -162,78 +216,89 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 9px 0;
+    padding: clamp(7px, 1vw, 11px) 0;
     border-bottom: 1px solid rgba(247,239,228,0.12);
     gap: 12px;
   }
   .tabella-vino .voce-vino .nome { flex: 1; font-size: 0.98em; }
-  .tabella-vino .voce-vino .prezzi { display: flex; gap: 18px; }
+  .tabella-vino .voce-vino .prezzi { display: flex; gap: clamp(10px, 2vw, 18px); }
   .tabella-vino .voce-vino .prezzi span { width: 58px; text-align: right; font-weight: 700; white-space: nowrap; }
 
   .coperto {
-    margin-top: 10px;
+    margin-top: var(--spazio-s);
     text-align: center;
     font-weight: 700;
     opacity: 0.9;
   }
 
   .torna-inizio {
-    margin-top: 20px;
+    margin-top: var(--spazio-m);
     text-align: center;
   }
-
-  .nav-categorie {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    max-width: 320px;
-    margin-top: 34px;
-    padding-top: 26px;
-    border-top: 1px solid rgba(247,239,228,0.2);
-  }
-  .nav-categorie .etichetta {
-    text-align: center;
-    font-size: 0.85em;
-    opacity: 0.7;
-    margin-bottom: 4px;
-  }
-  button.bottone-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background-color: transparent;
-    color: #f7efe4;
-    border: 2px solid #f7efe4;
-    font-size: 1em;
-    font-weight: 700;
-    padding: 14px 24px;
-    border-radius: 30px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-  }
-  button.bottone-nav:hover { background-color: rgba(247,239,228,0.12); }
-  button.bottone-nav:active { transform: scale(0.98); }
 
   .avviso-pranzo {
-    font-size: 0.85em;
+    font-size: var(--testo-piccolo);
     font-style: italic;
     opacity: 0.75;
     text-align: center;
-    margin-bottom: 22px;
+    margin-bottom: var(--spazio-l);
+  }
+
+  /* --- ADATTAMENTO PER TABLET --- */
+  @media (min-width: 700px) {
+    :root {
+      --larghezza-contenuto: min(80vw, 620px);
+    }
+    .schermata {
+      padding-top: var(--spazio-xl);
+      padding-bottom: var(--spazio-xl);
+    }
+    .bottoni { max-width: 400px; }
+  }
+
+  /* --- ADATTAMENTO PER DESKTOP / SCHERMI GRANDI --- */
+  @media (min-width: 1024px) {
+    :root {
+      --larghezza-contenuto: min(60vw, 760px);
+    }
+    body { padding: var(--spazio-l) 0; }
+    .schermata {
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.12);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .bottoni { max-width: 440px; }
+    button.bottone:hover { transform: translateY(-1px); }
+  }
+
+  /* --- ADATTAMENTO PER SCHERMI MOLTO GRANDI --- */
+  @media (min-width: 1440px) {
+    :root {
+      --larghezza-contenuto: min(45vw, 860px);
+    }
+  }
+
+  /* --- ORIENTAMENTO ORIZZONTALE SU MOBILE (schermo basso) --- */
+  @media (max-height: 480px) and (orientation: landscape) {
+    #schermata-lingua { padding: var(--spazio-s); }
+    .schermata { padding-top: var(--spazio-m); padding-bottom: var(--spazio-m); }
+    .tagline { margin-bottom: 0; }
+    .sottotitolo { margin-bottom: var(--spazio-s); }
   }
 </style>
 </head>
 <body>
+
+<!-- Livello dello sfondo statico -->
+<div id="sfondo-bg"></div>
 
 <!-- SCHERMATA 1: scelta lingua -->
 <div id="schermata-lingua" class="schermata attiva">
   <p class="tagline">Trattoria da Franca</p>
   <h1 class="logo">Menu'</h1>
   <div class="separatore"></div>
-  <p class="sottotitolo">Scegli la lingua del menu<br>Choose your menu language</p>
+  <p class="sottotitolo">Scegli la lingua<br>Choose language</p>
+
   <div class="bottoni">
     <button class="bottone" onclick="selezionaLingua('it')">
       <span class="icona">🇮🇹</span> Italiano
@@ -290,7 +355,6 @@ const ui = {
     cambiaLingua: "← Cambia lingua",
     indietro: "← Categorie",
     tornaCategorie: "← Torna alle categorie",
-    vaiA: "Vai a",
     avvisoPranzo: "Alcuni piatti non sono disponibili a pranzo (11:30–15:00)"
   },
   en: {
@@ -301,7 +365,6 @@ const ui = {
     cambiaLingua: "← Change language",
     indietro: "← Categories",
     tornaCategorie: "← Back to categories",
-    vaiA: "Go to",
     avvisoPranzo: "Some dishes are not available at lunch (11:30 AM–3:00 PM)"
   }
 };
@@ -319,7 +382,7 @@ const piattiData = {
         ["Culaccia, stracciatella e chips di polenta croccante","€ 16,00"],
         ["Crudo di patanegra con pinsa romana, sale grosso e rosmarino","€ 16,00"],
         ["Selezione di formaggi con composte","€ 16,50"],
-        ["Battuta di manzo a coltello con misticanze e frutta","€ 15,00"],
+        ["Battuta di manzo a coltello con misticanza e frutta","€ 15,00", ["lun","mar","mer","gio","ven"]],
         ["Sformatino di patate con asparagi e guanciale croccante","€ 14,50"],
         ["Salume misto (coppa, pancetta, crudo, salame)","€ 12,50"],
         ["Tagliere della casa (consigliato per 2 persone)","€ 24,00"],
@@ -327,7 +390,7 @@ const piattiData = {
         ["Carne salada trentina con pomodori freschi e olio agrumato","€ 16,00"],
         ["Millefoglie di melanzane, pomodoro e mozzarella","€ 13,00"],
         ["Gnocco fritto (6 pezzi)","€ 3,80"],
-        ["Tigelle (5 pezzi)","€ 3,80"]
+        ["Tigelle (5 pezzi)","€ 3,80", ["lun","mar","mer","gio","ven","sab"]]
       ]},
       { titolo: "Primi", items: [
         ["Tortelli di zucca con burro e salvia oppure pomodoro e pancetta","€ 13,00"],
@@ -355,7 +418,7 @@ const piattiData = {
         ["Tagliata di manzo con brandy e granella di pistacchio","€ 20,00"]
       ]},
       { titolo: "Secondi alla brace/griglia", items: [
-        ["Grigliata di maiale (costine, pancetta, coppa, salsiccia)","€ 14,50"],
+        ["Grigliata di maiale (costine, pancetta, coppa, salsiccia)","€ 14,50", ["lun","mar","mer","gio","ven"]],
         ["Tagliata di manzo","€ 17,50"],
         ["Filetto di manzo","€ 18,50"],
         ["Costata garonese","€/kg 46,00"],
@@ -373,24 +436,17 @@ const piattiData = {
         ["Dolci della casa","€ 6,00"],
         ["Sorbetto","€ 4,00"]
       ]},
-      { titolo: "Acqua", items: [
+      { titolo: "Acqua e Bevande", items: [
         ["Naturale o Frizzante 0,5L","€ 1,50"],
-        ["Naturale o Frizzante 1L","€ 2,50"]
+        ["Naturale o Frizzante 1L","€ 2,50"],
+        ["Coca cola in lattina 33cl","€ 3,50"],
+        ["Coca cola in bottiglia 1L","€ 6,00"]
       ]},
       { titolo: "Vino della Casa", tabella: true, colonne: ["1/4L","1/2L","1L"], items: [
         ["Trebbiano bianco", ["€ 4,00","€ 6,00","€ 11,00"]],
         ["Lambrusco rosso", ["€ 4,00","€ 6,00","€ 11,00"]],
         ["Lambrusco rosato", ["€ 4,00","€ 6,00","€ 11,00"]],
         ["Sangiovese", ["€ 4,00","€ 6,00","€ 11,00"]]
-      ]},
-      { titolo: "Birra alla spina", items: [
-        ["Forst bionda 0,3L","€ 3,50"],
-        ["Forst bionda 0,4L","€ 4,50"],
-        ["Forst bionda 0,5L","€ 5,50"]
-      ]},
-      { titolo: "Bibite", items: [
-        ["Coca cola in lattina 33cl","€ 3,50"],
-        ["Coca cola in bottiglia 1L","€ 6,00"]
       ]}
     ],
     coperto: "Coperto € 2"
@@ -406,7 +462,7 @@ const piattiData = {
         ["Culaccia ham, stracciatella cheese and crispy polenta chips","€ 16,00"],
         ["Cured Patanegra ham with Roman pinsa, coarse salt and rosemary","€ 16,00"],
         ["Selection of cheeses with fruit compotes","€ 16,50"],
-        ["Hand-cut beef tartare with mixed leaves and fruit","€ 15,00"],
+        ["Hand-cut beef tartare with mixed leaves and fruit","€ 15,00", ["lun","mar","mer","gio","ven"]],
         ["Potato flan with asparagus and crispy guanciale","€ 14,50"],
         ["Mixed cured meats (coppa, pancetta, prosciutto, salami)","€ 12,50"],
         ["House sharing board (recommended for 2 people)","€ 24,00"],
@@ -414,7 +470,7 @@ const piattiData = {
         ["Trentino-style cured beef with fresh tomatoes and citrus oil","€ 16,00"],
         ["Eggplant, tomato and mozzarella millefeuille","€ 13,00"],
         ["Fried dough \"gnocco fritto\" (6 pieces)","€ 3,80"],
-        ["\"Tigelle\" flatbreads (5 pieces)","€ 3,80"]
+        ["\"Tigelle\" flatbreads (5 pieces)","€ 3,80", ["lun","mar","mer","gio","ven","sab"]]
       ]},
       { titolo: "First Courses", items: [
         ["Pumpkin tortelli with butter and sage, or tomato and pancetta","€ 13,00"],
@@ -442,7 +498,7 @@ const piattiData = {
         ["Sliced beef with brandy and chopped pistachio","€ 20,00"]
       ]},
       { titolo: "Grilled Main Courses", items: [
-        ["Grilled pork platter (ribs, pancetta, coppa, sausage)","€ 14,50"],
+        ["Grilled pork platter (ribs, pancetta, coppa, sausage)","€ 14,50", ["lun","mar","mer","gio","ven"]],
         ["Sliced beef","€ 17,50"],
         ["Beef fillet","€ 18,50"],
         ["Garonese rib steak","€/kg 46,00"],
@@ -460,24 +516,17 @@ const piattiData = {
         ["House desserts","€ 6,00"],
         ["Sorbet","€ 4,00"]
       ]},
-      { titolo: "Water", items: [
+      { titolo: "Drinks", items: [
         ["Still or Sparkling 0.5L","€ 1,50"],
-        ["Still or Sparkling 1L","€ 2,50"]
+        ["Still or Sparkling 1L","€ 2,50"],
+        ["Coca-Cola can 33cl","€ 3,50"],
+        ["Coca-Cola bottle 1L","€ 6,00"]
       ]},
       { titolo: "House Wine", tabella: true, colonne: ["1/4L","1/2L","1L"], items: [
         ["Trebbiano white", ["€ 4,00","€ 6,00","€ 11,00"]],
         ["Lambrusco red", ["€ 4,00","€ 6,00","€ 11,00"]],
         ["Lambrusco rosé", ["€ 4,00","€ 6,00","€ 11,00"]],
         ["Sangiovese", ["€ 4,00","€ 6,00","€ 11,00"]]
-      ]},
-      { titolo: "Draft Beer", items: [
-        ["Forst lager 0,3L","€ 3,50"],
-        ["Forst lager 0,4L","€ 4,50"],
-        ["Forst lager 0,5L","€ 5,50"]
-      ]},
-      { titolo: "Soft Drinks", items: [
-        ["Coca-Cola can 33cl","€ 3,50"],
-        ["Coca-Cola bottle 1L","€ 6,00"]
       ]}
     ],
     coperto: "Cover charge € 2"
@@ -649,6 +698,20 @@ function isOrarioPranzo() {
   return minutiTotali >= inizioPranzo && minutiTotali < finePranzo;
 }
 
+/* ---------- GIORNO DELLA SETTIMANA CORRENTE ---------- */
+function giornoCorrente() {
+  const codici = ['dom','lun','mar','mer','gio','ven','sab'];
+  return codici[new Date().getDay()];
+}
+
+/* ---------- VERIFICA SE UN PIATTO VA NASCOSTO ORA ---------- */
+function vaNascostoAPranzo(giorniNascondi) {
+  if (!giorniNascondi) return false;
+  if (giorniNascondi === true) return isOrarioPranzo();
+  if (!isOrarioPranzo()) return false;
+  return giorniNascondi.includes(giornoCorrente());
+}
+
 /* ---------- NAVIGAZIONE ---------- */
 function nascondiTutte() {
   document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
@@ -711,7 +774,7 @@ function mostraContenuto(tipo) {
 
   if (tipo === 'piatti' && pranzoAttivo) {
     dati.sezioni.forEach(sez => {
-      if (!sez.tabella && sez.items.some(it => it[2] === true)) almenoUnoNascosto = true;
+      if (!sez.tabella && sez.items.some(it => vaNascostoAPranzo(it[2]))) almenoUnoNascosto = true;
     });
     if (almenoUnoNascosto) {
       const avviso = document.createElement('div');
@@ -724,6 +787,7 @@ function mostraContenuto(tipo) {
   dati.sezioni.forEach(sez => {
     const sezDiv = document.createElement('div');
     sezDiv.className = 'sezione';
+
     const h3 = document.createElement('h3');
     h3.textContent = sez.titolo;
     sezDiv.appendChild(h3);
@@ -759,8 +823,8 @@ function mostraContenuto(tipo) {
       sezDiv.appendChild(tab);
     } else {
       let visibili = 0;
-      sez.items.forEach(([nome, prezzo, soloCena]) => {
-        if (tipo === 'piatti' && pranzoAttivo && soloCena === true) return; // nascosto a pranzo
+      sez.items.forEach(([nome, prezzo, giorniNascondi]) => {
+        if (tipo === 'piatti' && vaNascostoAPranzo(giorniNascondi)) return;
         visibili++;
         const riga = document.createElement('div');
         riga.className = 'voce';
@@ -774,8 +838,9 @@ function mostraContenuto(tipo) {
         riga.appendChild(prezzoEl);
         sezDiv.appendChild(riga);
       });
-      if (visibili === 0) return; // sezione interamente nascosta a pranzo, non mostrarla
+      if (visibili === 0) return;
     }
+
     corpo.appendChild(sezDiv);
   });
 
@@ -785,34 +850,6 @@ function mostraContenuto(tipo) {
     cop.textContent = dati.coperto;
     corpo.appendChild(cop);
   }
-
-  /* Bottoni di navigazione rapida verso le altre categorie */
-  const ordineCategorie = {
-    piatti: { icona: '🍷', label: t.vini, tipo: 'vini', icona2: '🍺', label2: t.birre, tipo2: 'birre' },
-    vini:   { icona: '🍽️', label: t.piatti, tipo: 'piatti', icona2: '🍺', label2: t.birre, tipo2: 'birre' },
-    birre:  { icona: '🍽️', label: t.piatti, tipo: 'piatti', icona2: '🍷', label2: t.vini, tipo2: 'vini' }
-  };
-  const nav = ordineCategorie[tipo];
-  const navDiv = document.createElement('div');
-  navDiv.className = 'nav-categorie';
-  const etichetta = document.createElement('div');
-  etichetta.className = 'etichetta';
-  etichetta.textContent = linguaCorrente === 'it' ? 'Continua con:' : 'Continue with:';
-  navDiv.appendChild(etichetta);
-
-  const btn1 = document.createElement('button');
-  btn1.className = 'bottone-nav';
-  btn1.innerHTML = `<span class="icona">${nav.icona}</span> ${t.vaiA} ${nav.label}`;
-  btn1.onclick = () => mostraContenuto(nav.tipo);
-  navDiv.appendChild(btn1);
-
-  const btn2 = document.createElement('button');
-  btn2.className = 'bottone-nav';
-  btn2.innerHTML = `<span class="icona">${nav.icona2}</span> ${t.vaiA} ${nav.label2}`;
-  btn2.onclick = () => mostraContenuto(nav.tipo2);
-  navDiv.appendChild(btn2);
-
-  corpo.appendChild(navDiv);
 
   nascondiTutte();
   document.getElementById('schermata-contenuto').classList.add('attiva');
