@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2b1810" />
+<meta name="description" content="Menu - Trattoria da Franca" />
+<title>Trattoria da Franca — Menu</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E🍷%3C/text%3E%3C/svg%3E" />
+<link rel="preload" as="image" href="da-franca.png" fetchpriority="high" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="mostra-hero">
+  <div id="sfondo-bg" aria-hidden="true"></div>
+  <div class="hero-foto" aria-hidden="true"></div>
+  <div class="hero-overlay" aria-hidden="true"></div>
+
+  <!-- SCHERMATA 1: scelta lingua -->
+  <section id="schermata-lingua" class="schermata attiva" aria-label="Selezione lingua">
+    <p class="tagline">Trattoria</p>
+    <h1 class="logo">da Franca</h1>
+    <div class="separatore" aria-hidden="true"></div>
+    <p class="sottotitolo">Scegli la lingua<br><span class="muted">Choose language</span></p>
+    <div class="bottoni">
+      <button type="button" class="bottone" onclick="selezionaLingua('it')">
+        <span class="icona" aria-hidden="true">🇮🇹</span> Italiano
+      </button>
+      <button type="button" class="bottone secondario" onclick="selezionaLingua('en')">
+        <span class="icona" aria-hidden="true">🇬🇧</span> English
+      </button>
+    </div>
+  </section>
+
+  <!-- SCHERMATA 2: scelta categoria -->
+  <section id="schermata-categoria" class="schermata" aria-label="Categorie">
+    <p class="tagline">Trattoria da Franca</p>
+    <h2 class="titolo-pagina" id="cat-titolo"></h2>
+    <div class="separatore" aria-hidden="true"></div>
+    <div class="bottoni">
+      <button type="button" class="bottone" onclick="mostraContenuto('piatti')">
+        <span class="icona" aria-hidden="true">🍽️</span> <span id="cat-piatti"></span>
+      </button>
+      <button type="button" class="bottone" onclick="mostraContenuto('vini')">
+        <span class="icona" aria-hidden="true">🍷</span> <span id="cat-vini"></span>
+      </button>
+      <button type="button" class="bottone" onclick="mostraContenuto('birre')">
+        <span class="icona" aria-hidden="true">🍺</span> <span id="cat-birre"></span>
+      </button>
+    </div>
+    <button type="button" class="link-testo" onclick="mostraLingua()" id="cat-cambia-lingua"></button>
+  </section>
+
+  <!-- POPUP ALLERGENI -->
+  <div id="overlay-allergeni" class="overlay-modale" role="dialog" aria-modal="true" aria-labelledby="allergeni-titolo" onclick="if(event.target===this)chiudiAllergeni()">
+    <div class="modale">
+      <div class="modale-intestazione">
+        <h3 id="allergeni-titolo"></h3>
+        <button type="button" class="modale-chiudi" onclick="chiudiAllergeni()" aria-label="Chiudi">&times;</button>
+      </div>
+      <hr>
+      <ul class="lista-allergeni" id="lista-allergeni"></ul>
+      <p class="modale-nota" id="allergeni-nota"></p>
+    </div>
+  </div>
+
+  <!-- POPUP SCHEDA TECNICA VINO -->
+  <div id="overlay-scheda-vino" class="overlay-modale" role="dialog" aria-modal="true" aria-labelledby="scheda-vino-titolo" onclick="if(event.target===this)chiudiSchedaVino()">
+    <div class="modale">
+      <div class="modale-intestazione">
+        <h3 id="scheda-vino-titolo"></h3>
+        <button type="button" class="modale-chiudi" onclick="chiudiSchedaVino()" aria-label="Chiudi">&times;</button>
+      </div>
+      <hr>
+      <div class="scheda-vino-foto-wrap" id="scheda-vino-foto-wrap">
+        <img class="scheda-vino-foto" id="scheda-vino-foto" src="" alt="" loading="lazy">
+      </div>
+      <dl class="scheda-vino" id="scheda-vino-corpo"></dl>
+    </div>
+  </div>
+
+  <!-- SCHERMATA 3: contenuto -->
+  <section id="schermata-contenuto" class="schermata" aria-label="Contenuto menu">
+    <nav class="barra-nav" aria-label="Navigazione">
+      <button type="button" onclick="mostraCategoria()" id="nav-indietro"></button>
+      <button type="button" onclick="mostraLingua()" id="nav-lingua"></button>
+    </nav>
+    <p class="tagline">Trattoria da Franca</p>
+    <h2 class="titolo-pagina" id="cont-titolo"></h2>
+    <div class="separatore" aria-hidden="true"></div>
+    <div id="cont-nota" class="nota-info"></div>
+    <div id="cont-corpo" class="corpo-contenuto"></div>
+    <div class="torna-inizio">
+      <button type="button" class="link-testo" onclick="mostraCategoria()" id="cont-torna"></button>
+    </div>
+  </section>
+
+
+<script src="dati-menu.js"></script>
+<script src="dati-foto.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
