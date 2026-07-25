@@ -1,0 +1,101 @@
+/* =========================================================
+   Trattoria da Franca — Dashboard admin
+   Palette coerente con style.css: marroni caldi, oro, panna.
+   ========================================================= */
+:root{
+  --a-bg:#1a0f0a;
+  --a-panel:#2b1810;
+  --a-panel-2:#3d2418;
+  --a-oro:#c8a464;
+  --a-oro-chiaro:#dcbe86;
+  --a-panna:#faf5ec;
+  --a-muted:rgba(250,245,236,.68);
+  --a-divisore:rgba(200,164,100,.22);
+  --a-vino:#7a1f2b;
+  --a-verde:#4d8f5a;
+  --a-rosso:#b3423b;
+  --a-raggio:14px;
+  --a-ombra:0 10px 30px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body.admin{
+  font-family:'Georgia','Times New Roman',serif;
+  min-height:100vh;color:var(--a-panna);
+  background:
+    radial-gradient(ellipse at top,rgba(122,31,43,.28) 0%,transparent 60%),
+    radial-gradient(ellipse at bottom,rgba(200,164,100,.10) 0%,transparent 55%),
+    linear-gradient(180deg,#2b1810 0%,#1a0f0a 100%);
+  -webkit-font-smoothing:antialiased;
+}
+
+.container{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+
+.head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.head h1{font-family:'Georgia',serif;font-style:italic;margin:0;color:var(--a-panna);font-size:1.8rem;letter-spacing:.5px}
+.head .sub{color:var(--a-oro-chiaro);font-family:'Brush Script MT','Segoe Script',cursive;font-size:1.3rem;margin:0}
+.head button{background:rgba(20,10,6,.55);border:1px solid var(--a-divisore);color:var(--a-oro-chiaro);
+  padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit}
+.head button:hover{background:rgba(200,164,100,.15);color:var(--a-panna);border-color:var(--a-oro)}
+
+.pannello{background:rgba(20,10,6,.55);border:1px solid var(--a-divisore);
+  border-radius:var(--a-raggio);padding:20px;margin-bottom:20px;box-shadow:var(--a-ombra);
+  backdrop-filter:blur(6px);}
+.pannello h2{margin:0 0 14px;color:var(--a-oro-chiaro);font-style:italic;
+  font-size:1.15rem;letter-spacing:.3px;padding-bottom:8px;border-bottom:1px solid var(--a-divisore)}
+
+/* ---- LOGIN ---- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{width:100%;max-width:380px;background:linear-gradient(180deg,#3d2418,#2b1810);
+  border:1px solid var(--a-divisore);border-radius:var(--a-raggio);
+  padding:28px;box-shadow:var(--a-ombra)}
+.login-card h1{margin:0 0 4px;text-align:center;font-style:italic;font-size:1.6rem}
+.login-card .sub{text-align:center;color:var(--a-oro-chiaro);
+  font-family:'Brush Script MT','Segoe Script',cursive;font-size:1.2rem;margin:0 0 20px}
+.login-card label{display:block;font-size:.85rem;color:var(--a-oro-chiaro);margin:12px 0 6px;letter-spacing:.04em;text-transform:uppercase}
+.login-card input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--a-divisore);
+  background:rgba(20,10,6,.55);color:var(--a-panna);font-family:inherit;font-size:1rem;outline:none}
+.login-card input:focus{border-color:var(--a-oro)}
+.login-card button{margin-top:18px;width:100%;padding:12px;border-radius:999px;border:none;cursor:pointer;
+  background:linear-gradient(180deg,var(--a-panna),#e8dcc4);color:#2b1810;font-weight:700;font-family:inherit;font-size:1rem}
+.login-card button:hover{filter:brightness(1.05)}
+.login-err{margin-top:12px;color:#ffb1a8;text-align:center;font-size:.9rem;min-height:1.2em}
+.login-torna{display:block;text-align:center;margin-top:16px;color:var(--a-oro-chiaro);text-decoration:none;font-size:.85rem}
+.login-torna:hover{color:var(--a-oro);text-decoration:underline}
+
+/* ---- CONTROLLI PERIODO ---- */
+.periodi{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.periodi{grid-template-columns:1fr}}
+.periodo{border:1px solid var(--a-divisore);border-radius:12px;padding:14px;background:rgba(20,10,6,.35)}
+.periodo h3{margin:0 0 8px;font-size:.95rem;color:var(--a-panna);font-style:italic}
+.periodo .date{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.periodo input[type=date]{padding:8px;border-radius:8px;border:1px solid var(--a-divisore);
+  background:rgba(20,10,6,.55);color:var(--a-panna);font-family:inherit}
+.preset{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset button{background:rgba(20,10,6,.55);border:1px solid var(--a-divisore);color:var(--a-oro-chiaro);
+  padding:8px 12px;border-radius:999px;cursor:pointer;font-family:inherit;font-size:.85rem}
+.preset button:hover,.preset button.attivo{background:rgba(200,164,100,.18);color:var(--a-panna);border-color:var(--a-oro)}
+
+/* ---- KPI CARDS (confronto) ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{background:rgba(20,10,6,.4);border:1px solid var(--a-divisore);border-radius:12px;padding:14px}
+.kpi .label{color:var(--a-oro-chiaro);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.kpi .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.85rem;color:var(--a-muted)}
+.kpi .totale{font-size:1.8rem;font-weight:700;color:var(--a-panna);font-variant-numeric:tabular-nums;margin:4px 0}
+.kpi .delta{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:.95rem;padding:2px 8px;border-radius:999px}
+.kpi .delta.su{background:rgba(77,143,90,.18);color:#8ed69b}
+.kpi .delta.giu{background:rgba(179,66,59,.18);color:#f0a29d}
+.kpi .delta.pari{background:rgba(200,164,100,.12);color:var(--a-oro-chiaro)}
+
+/* ---- GRAFICI + CLASSIFICHE ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:900px){.grid-2{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:260px}
+.classifica{list-style:none;margin:0;padding:0}
+.classifica li{display:flex;justify-content:space-between;gap:12px;padding:8px 4px;
+  border-bottom:1px dashed var(--a-divisore);font-size:.95rem}
+.classifica li:last-child{border-bottom:none}
+.classifica .nome{color:var(--a-panna)}
+.classifica .val{color:var(--a-oro-chiaro);font-weight:700;font-variant-numeric:tabular-nums}
+.vuoto{color:var(--a-muted);font-style:italic;text-align:center;padding:20px}
+.loading{color:var(--a-oro-chiaro);text-align:center;padding:20px;font-style:italic}
