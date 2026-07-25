@@ -9,8 +9,16 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E🍷%3C/text%3E%3C/svg%3E" />
 <link rel="preload" as="image" href="da-franca.png" fetchpriority="high" />
 <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="admin.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
 </head>
 <body class="mostra-hero">
+
+<!-- =========================================================
+     VISTA SITO — menu pubblico per i clienti
+     ========================================================= -->
+<div id="vista-sito">
+
   <div id="sfondo-bg" aria-hidden="true"></div>
   <div class="hero-foto" aria-hidden="true"></div>
   <div class="hero-overlay" aria-hidden="true"></div>
@@ -94,9 +102,158 @@
     </div>
   </section>
 
+  <!-- Barra contatti: chiama/prenota + apri Google Maps (angolo basso-sinistra) -->
+  <div class="barra-contatti" id="barra-contatti">
+    <a href="tel:" id="btn-chiama" class="pillola-contatto">
+      <span class="icona-contatto" aria-hidden="true">📞</span>
+      <span class="testo-contatto"></span>
+    </a>
+    <a href="#" id="btn-mappa" class="pillola-contatto" target="_blank" rel="noopener">
+      <span class="icona-contatto" aria-hidden="true">📍</span>
+      <span class="testo-contatto"></span>
+    </a>
+  </div>
 
+  <!-- Bottone area riservata: apre la dashboard admin (angolo basso-destra) -->
+  <a href="#admin" class="area-riservata" id="btn-area-riservata" aria-label="Area riservata / accesso admin" title="Area riservata">🔒</a>
+
+</div>
+
+<!-- =========================================================
+     VISTA ADMIN — dashboard statistiche (protetta da login)
+     ========================================================= -->
+<div id="vista-admin" style="display:none">
+
+  <!-- SCHERMATA LOGIN -->
+  <section id="login-view" class="login-wrap">
+    <form class="login-card" id="login-form" autocomplete="on">
+      <p class="sub">Trattoria da Franca</p>
+      <h1>Area riservata</h1>
+      <label for="email">Email</label>
+      <input type="email" id="email" required autocomplete="email" />
+      <label for="password">Password</label>
+      <input type="password" id="password" required autocomplete="current-password" />
+      <button type="submit" id="btn-login">Accedi</button>
+      <p class="login-err" id="login-err"></p>
+      <a class="login-torna" href="#" id="login-torna">← Torna al menu</a>
+    </form>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard-view" class="container" style="display:none">
+    <div class="head">
+      <div>
+        <p class="sub">Trattoria da Franca</p>
+        <h1>Statistiche menu digitale</h1>
+      </div>
+      <button type="button" id="btn-logout">Esci</button>
+    </div>
+
+    <div class="pannello">
+      <h2>Confronta due periodi</h2>
+      <div class="preset" id="preset-btns">
+        <button type="button" data-preset="settimana">Questa settimana vs scorsa</button>
+        <button type="button" data-preset="mese">Questo mese vs mese scorso</button>
+        <button type="button" data-preset="7g">Ultimi 7 gg vs precedenti 7 gg</button>
+        <button type="button" data-preset="30g">Ultimi 30 gg vs precedenti 30 gg</button>
+        <button type="button" data-preset="custom" class="attivo">Personalizzato</button>
+      </div>
+      <div class="periodi">
+        <div class="periodo">
+          <h3>Periodo B (più recente)</h3>
+          <div class="date">
+            <input type="date" id="b-da" /> <span>→</span> <input type="date" id="b-a" />
+          </div>
+        </div>
+        <div class="periodo">
+          <h3>Periodo A (precedente)</h3>
+          <div class="date">
+            <input type="date" id="a-da" /> <span>→</span> <input type="date" id="a-a" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pannello">
+      <h2>Metriche principali (confronto B vs A)</h2>
+      <div class="kpis" id="kpis"><p class="loading">Caricamento…</p></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="pannello">
+        <h2>Lingua (periodo B)</h2>
+        <div class="chart-wrap"><canvas id="chart-lingua"></canvas></div>
+      </div>
+      <div class="pannello">
+        <h2>Categoria (periodo B)</h2>
+        <div class="chart-wrap"><canvas id="chart-categoria"></canvas></div>
+      </div>
+      <div class="pannello">
+        <h2>Dispositivo (periodo B)</h2>
+        <div class="chart-wrap"><canvas id="chart-dispositivo"></canvas></div>
+      </div>
+      <div class="pannello">
+        <h2>Distribuzione per ora del giorno (B)</h2>
+        <div class="chart-wrap"><canvas id="chart-ora"></canvas></div>
+      </div>
+      <div class="pannello">
+        <h2>Sezioni piatti più consultate (B)</h2>
+        <ol class="classifica" id="lista-sezioni"><li class="vuoto">—</li></ol>
+      </div>
+      <div class="pannello">
+        <h2>Schede vino più aperte (B)</h2>
+        <ol class="classifica" id="lista-vini"><li class="vuoto">—</li></ol>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- =========================================================
+     SCRIPT: dati + logica menu, poi firebase, poi admin
+     ========================================================= -->
 <script src="dati-menu.js"></script>
 <script src="dati-foto.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module" src="firebase-init.js"></script>
 <script src="app.js"></script>
+<script type="module" src="admin.js"></script>
+
+<!-- Router leggero: mostra vista sito o vista admin in base all'hash #admin,
+     senza più bisogno di due file HTML separati. -->
+<script>
+  (function(){
+    var vistaSito  = document.getElementById('vista-sito');
+    var vistaAdmin = document.getElementById('vista-admin');
+
+    function mostraVistaSito(){
+      vistaAdmin.style.display = 'none';
+      vistaSito.style.display  = '';
+      document.body.classList.remove('admin');
+    }
+    function mostraVistaAdmin(){
+      vistaSito.style.display  = 'none';
+      vistaAdmin.style.display = '';
+      document.body.classList.add('admin');
+    }
+    function sincronizzaVista(){
+      if (location.hash === '#admin') mostraVistaAdmin();
+      else mostraVistaSito();
+    }
+    window.addEventListener('hashchange', sincronizzaVista);
+    sincronizzaVista();
+
+    // "← Torna al menu" nella schermata di login admin
+    var linkTorna = document.getElementById('login-torna');
+    if (linkTorna) {
+      linkTorna.addEventListener('click', function(e){
+        e.preventDefault();
+        history.replaceState(null, '', location.pathname + location.search);
+        mostraVistaSito();
+      });
+    }
+  })();
+</script>
+
 </body>
 </html>
