@@ -5,15 +5,92 @@
    carosello foto, popup allergeni, scheda tecnica vino.
    Non serve modificarlo per aggiornare il menu: per i testi
    vedi dati-menu.js, per le foto vedi dati-foto.js.
+
+   Analytics: le chiamate a window.tracciaEvento(...) sono
+   inviate a Firebase Realtime Database come incrementi
+   atomici sotto stats/giornaliero/<oggi>. Se Firebase non è
+   raggiungibile o non è configurato, tracciaEvento è un no-op
+   (definito in firebase-init.js) e il menu funziona normalmente.
    ========================================================= */
 
 'use strict';
 
 let linguaCorrente = 'it';
 
-function immaginePer(titolo){
+/* ---------- CRONOLOGIA / TASTO INDIETRO ----------
+   Ogni cambio di schermata (lingua → categoria → contenuto) viene
+   registrato con history.pushState, così il tasto "indietro" del
+   telefono/browser torna alla schermata precedente del sito invece
+   di uscire dalla pagina. Anche l'apertura di un popup (allergeni,
+   scheda tecnica) registra un piccolo passo di cronologia: il tasto
+   indietro chiude prima il popup, poi torna indietro nelle schermate. */
+let statoCorrente = { schermata: 'lingua' };
+function pushStato(nuovo, opzioni){
+  const replace = opzioni && opzioni.replace;
+  try { history[replace ? 'replaceState' : 'pushState'](nuovo, ''); }
+  catch(e){ /* ambienti senza History API: il sito funziona comunque */ }
+  statoCorrente = nuovo;
+}
+function _chiudiModaliSenzaStorico(){
+  document.getElementById('overlay-allergeni').classList.remove('attiva');
+  document.removeEventListener('keydown', chiudiAllergeniEsc);
+  document.getElementById('overlay-scheda-vino').classList.remove('attiva');
+  document.removeEventListener('keydown', chiudiSchedaVinoEsc);
+}
+window.addEventListener('popstate', (e) => {
+  const precedente = statoCorrente;
+  const nuovo = e.state || { schermata: 'lingua' };
+  const soloChiusuraModale = precedente && precedente.modale && !nuovo.modale &&
+    precedente.schermata === nuovo.schermata && precedente.tipo === nuovo.tipo;
+  statoCorrente = nuovo;
+  if (soloChiusuraModale){ _chiudiModaliSenzaStorico(); return; }
+  _chiudiModaliSenzaStorico();
+  if (nuovo.schermata === 'categoria') mostraCategoria(true);
+  else if (nuovo.schermata === 'contenuto') mostraContenuto(nuovo.tipo, true);
+  else mostraLingua(true);
+});
+
+/* Alcune sezioni del menu piatti contengono nel titolo parole come "vino"
+   o "wine" (es. "Vino della Casa" / "House Wine"), che altrimenti
+   corrisponderebbero per errore alla foto della cantina vini. Per questo
+   la ricerca dell'immagine storytelling è ristretta, per ogni tipo di
+   contenuto, solo alle sezioni realmente pertinenti a quel tipo. */
+const IDS_FOTO_PER_TIPO = {
+  piatti: ['antipasti','primi','secondi-brace','secondi','contorni','dessert'],
+  vini:   ['vini'],
+  birre:  ['birre']
+};
+function immaginePer(titolo, tipo){
   const t = (titolo||"").toLowerCase();
-  return immaginiSezioni.find(m => m.chiavi.some(k => t.includes(k)));
+  const permessi = tipo ? IDS_FOTO_PER_TIPO[tipo] : null;
+  return immaginiSezioni.find(m =>
+    (!permessi || permessi.includes(m.id)) && m.chiavi.some(k => t.includes(k))
+  );
+}
+
+/* ---------- HELPER ANALYTICS ---------- */
+function _rilevaDispositivo(){
+  try {
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    return w > 0 && w < 900 ? 'mobile' : 'desktop';
+  } catch(e){ return 'desktop'; }
+}
+function _oraCorrente(){
+  try { return new Date().getHours(); } catch(e){ return 0; }
+}
+/* Mappa il titolo di una sezione piatti nella chiave canonica
+   (antipasti|primi|secondi|contorni|dessert). "brace/griglia" ricade in "secondi". */
+function _sezionePiattiCanonica(titolo){
+  const m = immaginePer(titolo, 'piatti');
+  if (!m) return null;
+  const id = m.id;
+  if (id === 'secondi-brace') return 'secondi';
+  if (['antipasti','primi','secondi','contorni','dessert'].includes(id)) return id;
+  return null;
+}
+function _traccia(paths){
+  try { if (typeof window.tracciaEvento === 'function') window.tracciaEvento(paths); }
+  catch(e){ /* silenzioso */ }
 }
 
 /* ---------- CAROSELLO FOTO (scorrimento manuale + automatico) ---------- */
@@ -119,31 +196,50 @@ function aggiornaBodyClass(stato){
   document.body.classList.remove('mostra-hero','mostra-categoria','mostra-contenuto');
   document.body.classList.add('mostra-'+stato);
 }
-function selezionaLingua(l){
+function selezionaLingua(l, daPopState){
   fermaCaroselli();
   linguaCorrente=l;aggiornaTestiCategoria();
   nascondiTutte();document.getElementById('schermata-categoria').classList.add('attiva');
   aggiornaBodyClass('categoria');window.scrollTo(0,0);
+  if(!daPopState) pushStato({schermata:'categoria'});
+
+  /* ANALYTICS: visita totale + lingua + dispositivo + ora del giorno */
+  _traccia({
+    'visite': 1,
+    ['lingua/'+l]: 1,
+    ['dispositivo/'+_rilevaDispositivo()]: 1,
+    ['ora/'+_oraCorrente()]: 1
+  });
 }
-function mostraLingua(){
+function mostraLingua(daPopState){
   fermaCaroselli();
   nascondiTutte();document.getElementById('schermata-lingua').classList.add('attiva');
   aggiornaBodyClass('hero');window.scrollTo(0,0);
+  if(!daPopState) pushStato({schermata:'lingua'});
 }
-function mostraCategoria(){
+function mostraCategoria(daPopState){
   fermaCaroselli();
   aggiornaTestiCategoria();
   nascondiTutte();document.getElementById('schermata-categoria').classList.add('attiva');
   aggiornaBodyClass('categoria');window.scrollTo(0,0);
+  if(!daPopState) pushStato({schermata:'categoria'});
 }
 function aggiornaTestiCategoria(){
-  const t=ui[linguaCorrente];
-  document.getElementById('cat-titolo').textContent=t.catTitolo;
-  document.getElementById('cat-piatti').textContent=t.piatti;
-  document.getElementById('cat-vini').textContent=t.vini;
-  document.getElementById('cat-birre').textContent=t.birre;
-  document.getElementById('cat-cambia-lingua').textContent=t.cambiaLingua;
-  document.documentElement.lang=linguaCorrente;
+  /* Questa funzione tocca elementi/dati che dipendono dall'allineamento
+     tra index.html, dati-menu.js e app.js. Non deve MAI, per nessun
+     motivo, impedire il cambio di schermata (che dipende da lei essendo
+     chiamata come primo passo di selezionaLingua/mostraCategoria):
+     qualsiasi errore qui dentro viene isolato e solo segnalato in console. */
+  try {
+    const t=ui[linguaCorrente];
+    document.getElementById('cat-titolo').textContent=t.catTitolo;
+    document.getElementById('cat-piatti').textContent=t.piatti;
+    document.getElementById('cat-vini').textContent=t.vini;
+    document.getElementById('cat-birre').textContent=t.birre;
+    document.getElementById('cat-cambia-lingua').textContent=t.cambiaLingua;
+    document.documentElement.lang=linguaCorrente;
+  } catch(e){ console.warn('[aggiornaTestiCategoria]', e); }
+  try { aggiornaBarraContatti(); } catch(e){ console.warn('[barra-contatti]', e); }
 }
 
 /* ---------- POPUP ALLERGENI ---------- */
@@ -167,57 +263,77 @@ function mostraAllergeni(){
 
   document.getElementById('overlay-allergeni').classList.add('attiva');
   document.addEventListener('keydown',chiudiAllergeniEsc);
+  pushStato(Object.assign({},statoCorrente,{modale:'allergeni'}));
+
+  /* ANALYTICS: apertura popup allergeni */
+  _traccia({ 'allergeni_aperti': 1 });
 }
 function chiudiAllergeni(){
   document.getElementById('overlay-allergeni').classList.remove('attiva');
   document.removeEventListener('keydown',chiudiAllergeniEsc);
+  if (statoCorrente && statoCorrente.modale==='allergeni') history.back();
 }
 function chiudiAllergeniEsc(e){ if(e.key==='Escape') chiudiAllergeni(); }
 
-function creaBottoneScheda(nomeVino){
+/* tipo: 'vino' oppure 'birra' — determina quale archivio dati e quali
+   etichette usare per la scheda tecnica (funziona per entrambe le
+   categorie riusando lo stesso popup/markup). */
+function creaBottoneScheda(nome, tipo){
   const b=document.createElement('button');
   b.type='button';b.className='bottone-scheda';b.textContent='i';
   b.setAttribute('aria-label', linguaCorrente==='it' ? 'Scheda tecnica' : 'Technical sheet');
-  b.onclick=(e)=>{ e.stopPropagation(); mostraSchedaVino(nomeVino); };
+  b.onclick=(e)=>{ e.stopPropagation(); mostraSchedaVino(nome, tipo); };
   return b;
 }
-function mostraSchedaVino(nomeVino){
-  const t=ui[linguaCorrente].schedaVino;
-  document.getElementById('scheda-vino-titolo').textContent=nomeVino;
+function mostraSchedaVino(nome, tipo){
+  tipo = tipo || 'vino';
+  const archivio = tipo==='birra' ? schedeBirre : schedeVini;
+  const etichette = tipo==='birra' ? ui[linguaCorrente].schedaBirra : ui[linguaCorrente].schedaVino;
+  /* campi mostrati e relative etichette, nell'ordine di visualizzazione */
+  const campi = tipo==='birra'
+    ? [['birrificio',etichette.birrificio], ['stile',etichette.stile], ['descrizione',etichette.descrizione]]
+    : [['zona',etichette.zona], ['vitigno',etichette.vitigno], ['descrizione',etichette.descrizione]];
 
-  const dati=schedeVini[nomeVino]||{};
+  document.getElementById('scheda-vino-titolo').textContent=nome;
+
+  const voce=archivio[nome]||{};
+  /* i testi (zona/vitigno/descrizione oppure birrificio/stile/descrizione)
+     sono annidati per lingua sotto "it"/"en" */
+  const dati=voce[linguaCorrente]||{};
 
   const fotoWrap=document.getElementById('scheda-vino-foto-wrap');
   const foto=document.getElementById('scheda-vino-foto');
-  if(dati.foto){
+  if(voce.foto){
     foto.onerror=()=>{ fotoWrap.style.display='none'; };
-    foto.src=dati.foto;
-    foto.alt=nomeVino;
+    foto.src=voce.foto;
+    foto.alt=nome;
     fotoWrap.style.display='';
   } else {
     foto.removeAttribute('src');
     fotoWrap.style.display='none';
   }
 
-  const campi=[
-    ['zona',t.zona], ['vitigno',t.vitigno], ['descrizione',t.descrizione]
-  ];
   const corpo=document.getElementById('scheda-vino-corpo');
   corpo.innerHTML='';
   campi.forEach(([chiave,etichetta])=>{
     const div=document.createElement('div');
     const dt=document.createElement('dt');dt.textContent=etichetta;
-    const dd=document.createElement('dd');dd.textContent=dati[chiave]||t.daScrivere;
+    const dd=document.createElement('dd');dd.textContent=dati[chiave]||etichette.daScrivere;
     div.appendChild(dt);div.appendChild(dd);
     corpo.appendChild(div);
   });
 
   document.getElementById('overlay-scheda-vino').classList.add('attiva');
   document.addEventListener('keydown',chiudiSchedaVinoEsc);
+  pushStato(Object.assign({},statoCorrente,{modale:'scheda'}));
+
+  /* ANALYTICS: apertura scheda tecnica (per nome, distinta tra vino e birra) */
+  _traccia({ [(tipo==='birra' ? 'schede_birra_aperte/' : 'schede_vino_aperte/')+nome]: 1 });
 }
 function chiudiSchedaVino(){
   document.getElementById('overlay-scheda-vino').classList.remove('attiva');
   document.removeEventListener('keydown',chiudiSchedaVinoEsc);
+  if (statoCorrente && statoCorrente.modale==='scheda') history.back();
 }
 function chiudiSchedaVinoEsc(e){ if(e.key==='Escape') chiudiSchedaVino(); }
 
@@ -236,12 +352,15 @@ function creaOsservatore(){
 }
 
 /* ---------- RENDER CONTENUTO ---------- */
-function mostraContenuto(tipo){
+function mostraContenuto(tipo, daPopState){
   fermaCaroselli();
   const t=ui[linguaCorrente];
   const dataset={piatti:piattiData,vini:viniData,birre:birreData}[tipo];
   if(!dataset)return;
   const dati=dataset[linguaCorrente];
+
+  /* ANALYTICS: categoria consultata */
+  _traccia({ ['categoria/'+tipo]: 1 });
 
   document.getElementById('nav-indietro').textContent=t.indietro;
   document.getElementById('nav-lingua').textContent=t.cambiaLingua;
@@ -271,18 +390,42 @@ function mostraContenuto(tipo){
     corpo.appendChild(wrap);
   }
 
+  /* ---------- Ricerca piatti (solo schermata piatti) ---------- */
+  let ricercaInput=null, applicaFiltri=()=>{};
+  if(tipo==='piatti'){
+    const toolbar=document.createElement('div');toolbar.className='toolbar-piatti';
+
+    ricercaInput=document.createElement('input');
+    ricercaInput.type='search';ricercaInput.className='ricerca-piatti';
+    ricercaInput.placeholder=t.cercaPiatti;
+    ricercaInput.setAttribute('aria-label',t.cercaPiatti);
+    ricercaInput.addEventListener('input',()=>applicaFiltri());
+    toolbar.appendChild(ricercaInput);
+    corpo.appendChild(toolbar);
+  }
+
   const osservatore=creaOsservatore();
   const immaginiUsate=new Set();
+  const sezioniPiattiTracciate=new Set();
 
   dati.sezioni.forEach(sez=>{
     // Inserisce la fotografia/carosello storytelling PRIMA della sezione (una volta per tipologia)
-    const map=immaginePer(sez.titolo);
+    const map=immaginePer(sez.titolo, tipo);
     if(map && !immaginiUsate.has(map.id)){
       immaginiUsate.add(map.id);
       const didascalieLingua=(map.didascalie||[]).map(d=>d[linguaCorrente]||'');
       const carosello=creaCarosello(map.imgs, sez.titolo, didascalieLingua);
       corpo.appendChild(carosello);
       if(osservatore)osservatore.observe(carosello);
+    }
+
+    /* ANALYTICS: sezione piatti renderizzata (una sola volta per tipo) */
+    if (tipo==='piatti') {
+      const canon = _sezionePiattiCanonica(sez.titolo);
+      if (canon && !sezioniPiattiTracciate.has(canon)) {
+        sezioniPiattiTracciate.add(canon);
+        _traccia({ ['sezioni_piatti/'+canon]: 1 });
+      }
     }
 
     const sezDiv=document.createElement('section');sezDiv.className='sezione';
@@ -311,7 +454,8 @@ function mostraContenuto(tipo){
       sez.items.forEach(([nome,prezzi])=>{
         const riga=document.createElement('div');riga.className='voce-vino';
         const n=document.createElement('span');n.className='nome';n.textContent=nome;
-        if(tipo==='vini') n.appendChild(creaBottoneScheda(nome));
+        if(tipo==='vini') n.appendChild(creaBottoneScheda(nome,'vino'));
+        if(tipo==='birre') n.appendChild(creaBottoneScheda(nome,'birra'));
         const p=document.createElement('div');p.className='prezzi';
         prezzi.forEach(pp=>{const s=document.createElement('span');s.textContent=pp;p.appendChild(s);});
         riga.appendChild(n);riga.appendChild(p);tab.appendChild(riga);
@@ -323,8 +467,12 @@ function mostraContenuto(tipo){
         if(tipo==='piatti'&&vaNascostoAPranzo(g))return;
         vis++;
         const riga=document.createElement('div');riga.className='voce';
+        if(tipo==='piatti'){
+          riga.dataset.nome=nome.toLowerCase();
+        }
         const n=document.createElement('span');n.className='nome';n.textContent=nome;
-        if(tipo==='vini') n.appendChild(creaBottoneScheda(nome));
+        if(tipo==='vini') n.appendChild(creaBottoneScheda(nome,'vino'));
+        if(tipo==='birre') n.appendChild(creaBottoneScheda(nome,'birra'));
         const p=document.createElement('span');p.className='prezzo';p.textContent=prezzo;
         riga.appendChild(n);riga.appendChild(p);sezDiv.appendChild(riga);
       });
@@ -337,10 +485,62 @@ function mostraContenuto(tipo){
     corpo.appendChild(c);
   }
 
+  if(tipo==='piatti'){
+    const messaggioVuoto=document.createElement('p');
+    messaggioVuoto.className='vuoto-ricerca';messaggioVuoto.textContent=t.nessunRisultato;messaggioVuoto.hidden=true;
+    corpo.appendChild(messaggioVuoto);
+
+    applicaFiltri=function(){
+      const query=(ricercaInput.value||'').trim().toLowerCase();
+      let visibiliTotali=0;
+      corpo.querySelectorAll('.sezione').forEach(sezDiv=>{
+        let visibiliSezione=0;
+        sezDiv.querySelectorAll('.voce').forEach(riga=>{
+          const nome=riga.dataset.nome||'';
+          const visibile=!query||nome.includes(query);
+          riga.style.display=visibile?'':'none';
+          if(visibile)visibiliSezione++;
+        });
+        sezDiv.style.display=visibiliSezione>0?'':'none';
+        visibiliTotali+=visibiliSezione;
+      });
+      /* Durante la ricerca (query non vuota) nascondi le foto/caroselli
+         storytelling, per lasciare più spazio ai risultati filtrati */
+      corpo.querySelectorAll('.carosello-wrap').forEach(car=>{
+        car.style.display=query?'none':'';
+      });
+      messaggioVuoto.hidden=visibiliTotali>0;
+    };
+  }
+
   nascondiTutte();
   document.getElementById('schermata-contenuto').classList.add('attiva');
   aggiornaBodyClass('contenuto');
   window.scrollTo(0,0);
+  if(!daPopState) pushStato({schermata:'contenuto', tipo});
+}
+
+/* ---------- BARRA CONTATTI (chiama/prenota + come arrivare) ---------- */
+function aggiornaBarraContatti(){
+  if (typeof contattiRistorante === 'undefined') return; // dati-menu.js non aggiornato
+  const t=ui[linguaCorrente];
+  const btnChiama=document.getElementById('btn-chiama');
+  const btnMappa=document.getElementById('btn-mappa');
+  if(btnChiama){
+    btnChiama.href='tel:'+(contattiRistorante.telefono||'').replace(/\s+/g,'');
+    btnChiama.setAttribute('aria-label',t.prenotaAria);
+    btnChiama.title=t.prenotaAria+' · '+(contattiRistorante.telefonoVisualizzato||'');
+    const testo=btnChiama.querySelector('.testo-contatto');
+    if(testo) testo.textContent=t.prenota;
+  }
+  if(btnMappa){
+    const query=encodeURIComponent(contattiRistorante.indirizzo || 'Trattoria da Franca');
+    btnMappa.href='https://www.google.com/maps/search/?api=1&query='+query;
+    btnMappa.setAttribute('aria-label',t.raggiungici);
+    btnMappa.title=t.raggiungici;
+    const testoMappa=btnMappa.querySelector('.testo-contatto');
+    if(testoMappa) testoMappa.textContent=t.raggiungici;
+  }
 }
 
 /* Espone le funzioni chiamate dagli onclick */
@@ -352,3 +552,7 @@ window.mostraAllergeni=mostraAllergeni;
 window.chiudiAllergeni=chiudiAllergeni;
 window.mostraSchedaVino=mostraSchedaVino;
 window.chiudiSchedaVino=chiudiSchedaVino;
+
+/* Stato iniziale di cronologia (sostituisce, non aggiunge, la voce corrente) */
+pushStato({schermata:'lingua'}, {replace:true});
+aggiornaTestiCategoria();
