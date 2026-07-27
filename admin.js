@@ -4,7 +4,7 @@
    Legge stats/giornaliero/{YYYY-MM-DD} e aggrega lato client.
    ========================================================= */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import { getDatabase, ref, get, query, orderByKey, startAt, endAt }
@@ -19,7 +19,10 @@ if (!cfg || !cfg.apiKey || cfg.apiKey.startsWith("INSERISCI_")) {
   throw new Error("Firebase non configurato");
 }
 
-const app  = initializeApp(cfg);
+/* Riusa l'app di default se già inizializzata da firebase-init.js,
+   invece di richiamare initializeApp() una seconda volta (altrimenti
+   Firebase genera l'errore "app/duplicate-app"). */
+const app  = getApps().length ? getApp() : initializeApp(cfg);
 const auth = getAuth(app);
 const db   = getDatabase(app);
 
@@ -29,6 +32,37 @@ const dashView  = document.getElementById('dashboard-view');
 const loginForm = document.getElementById('login-form');
 const loginErr  = document.getElementById('login-err');
 const btnLogout = document.getElementById('btn-logout');
+
+/* ---------- SCHEDE (Statistiche / Gestisci menu) ---------- */
+const tabBtnStat = document.getElementById('dash-tab-stat');
+const tabBtnMenu = document.getElementById('dash-tab-menu');
+const tabStat = document.getElementById('tab-statistiche');
+const tabMenu = document.getElementById('tab-gestisci-menu');
+let menuAdminAvviato = false;
+function mostraScheda(nome){
+  const stat = nome === 'stat';
+  if (tabBtnStat) tabBtnStat.classList.toggle('attivo', stat);
+  if (tabBtnMenu) tabBtnMenu.classList.toggle('attivo', !stat);
+  if (tabStat) tabStat.style.display = stat ? '' : 'none';
+  if (tabMenu) tabMenu.style.display = stat ? 'none' : '';
+  if (!stat && !menuAdminAvviato){
+    menuAdminAvviato = true;
+    /* admin-menu.js espone questa funzione globale quando il suo modulo
+       viene eseguito: costruisce l'interfaccia "Gestisci menu" al primo
+       utilizzo, per non appesantire il caricamento della dashboard
+       statistiche quando non serve. Nel caso (raro) in cui il modulo
+       non abbia ancora finito di caricarsi, riprova per un paio di
+       secondi invece di fallire silenziosamente. */
+    let tentativi = 0;
+    (function avviaQuandoPronto(){
+      if (typeof window.avviaAdminMenu === 'function') { window.avviaAdminMenu(db, auth); return; }
+      if (tentativi++ > 40) { tabMenu.innerHTML = '<p class="vuoto">Impossibile caricare il pannello di gestione menu (admin-menu.js). Ricarica la pagina.</p>'; return; }
+      setTimeout(avviaQuandoPronto, 100);
+    })();
+  }
+}
+if (tabBtnStat) tabBtnStat.addEventListener('click', () => mostraScheda('stat'));
+if (tabBtnMenu) tabBtnMenu.addEventListener('click', () => mostraScheda('menu'));
 
 /* ---------- AUTH ---------- */
 onAuthStateChanged(auth, user => {
@@ -47,6 +81,7 @@ btnLogout.addEventListener('click', () => signOut(auth));
 function mostraLogin(){ loginView.style.display=''; dashView.style.display='none'; }
 function mostraDashboard(){
   loginView.style.display='none'; dashView.style.display='';
+  mostraScheda('stat');
   inizializzaPeriodi();
   aggiornaTutto();
 }
