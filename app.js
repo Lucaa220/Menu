@@ -62,7 +62,15 @@ const IDS_FOTO_PER_TIPO = {
 };
 function immaginePer(titolo, tipo){
   const t = (titolo||"").toLowerCase();
-  const permessi = tipo ? IDS_FOTO_PER_TIPO[tipo] : null;
+  /* Il filtro fisso IDS_FOTO_PER_TIPO serve solo ai dati statici di
+     dati-foto.js (parole chiave generiche, es. "vino" compare sia nella
+     cantina vini sia in "Vino della Casa" fra i piatti). Quando il menu
+     viene gestito da Firebase (menu-data.js), ogni voce di
+     immaginiSezioni si aggancia già a una sola sezione specifica
+     (le "chiavi" sono i titoli esatti di quella sezione), quindi il
+     filtro non serve e va disattivato per non nascondere le foto delle
+     sezioni aggiunte/rinominate dal pannello admin. */
+  const permessi = (tipo && !window.MENU_ORIGINE_FIREBASE) ? IDS_FOTO_PER_TIPO[tipo] : null;
   return immaginiSezioni.find(m =>
     (!permessi || permessi.includes(m.id)) && m.chiavi.some(k => t.includes(k))
   );
@@ -85,6 +93,7 @@ function _sezionePiattiCanonica(titolo){
   if (!m) return null;
   const id = m.id;
   if (id === 'secondi-brace') return 'secondi';
+  if (window.MENU_ORIGINE_FIREBASE) return id; // sezioni personalizzate: l'id stesso è la chiave
   if (['antipasti','primi','secondi','contorni','dessert'].includes(id)) return id;
   return null;
 }
@@ -239,7 +248,6 @@ function aggiornaTestiCategoria(){
     document.getElementById('cat-cambia-lingua').textContent=t.cambiaLingua;
     document.documentElement.lang=linguaCorrente;
   } catch(e){ console.warn('[aggiornaTestiCategoria]', e); }
-  try { aggiornaBarraContatti(); } catch(e){ console.warn('[barra-contatti]', e); }
 }
 
 /* ---------- POPUP ALLERGENI ---------- */
@@ -520,29 +528,6 @@ function mostraContenuto(tipo, daPopState){
   if(!daPopState) pushStato({schermata:'contenuto', tipo});
 }
 
-/* ---------- BARRA CONTATTI (chiama/prenota + come arrivare) ---------- */
-function aggiornaBarraContatti(){
-  if (typeof contattiRistorante === 'undefined') return; // dati-menu.js non aggiornato
-  const t=ui[linguaCorrente];
-  const btnChiama=document.getElementById('btn-chiama');
-  const btnMappa=document.getElementById('btn-mappa');
-  if(btnChiama){
-    btnChiama.href='tel:'+(contattiRistorante.telefono||'').replace(/\s+/g,'');
-    btnChiama.setAttribute('aria-label',t.prenotaAria);
-    btnChiama.title=t.prenotaAria+' · '+(contattiRistorante.telefonoVisualizzato||'');
-    const testo=btnChiama.querySelector('.testo-contatto');
-    if(testo) testo.textContent=t.prenota;
-  }
-  if(btnMappa){
-    const query=encodeURIComponent(contattiRistorante.indirizzo || 'Trattoria da Franca');
-    btnMappa.href='https://www.google.com/maps/search/?api=1&query='+query;
-    btnMappa.setAttribute('aria-label',t.raggiungici);
-    btnMappa.title=t.raggiungici;
-    const testoMappa=btnMappa.querySelector('.testo-contatto');
-    if(testoMappa) testoMappa.textContent=t.raggiungici;
-  }
-}
-
 /* Espone le funzioni chiamate dagli onclick */
 window.selezionaLingua=selezionaLingua;
 window.mostraLingua=mostraLingua;
@@ -553,6 +538,14 @@ window.chiudiAllergeni=chiudiAllergeni;
 window.mostraSchedaVino=mostraSchedaVino;
 window.chiudiSchedaVino=chiudiSchedaVino;
 
-/* Stato iniziale di cronologia (sostituisce, non aggiunge, la voce corrente) */
-pushStato({schermata:'lingua'}, {replace:true});
-aggiornaTestiCategoria();
+/* ---------- AVVIO ----------
+   Il sito non si avvia più da solo al caricamento dello script: i dati
+   del menu possono arrivare da Firebase (asincrono) prima di poter
+   disegnare qualsiasi schermata. È menu-data.js a chiamare
+   window.avviaApp() non appena i dati (da Firebase, o in mancanza
+   il fallback statico di dati-menu.js/dati-foto.js) sono pronti. */
+window.avviaApp = function avviaApp(){
+  /* Stato iniziale di cronologia (sostituisce, non aggiunge, la voce corrente) */
+  pushStato({schermata:'lingua'}, {replace:true});
+  aggiornaTestiCategoria();
+};
