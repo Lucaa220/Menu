@@ -13,7 +13,9 @@
    Chiavi ricercate nel titolo della sezione (case-insensitive).
    "imgs" è un array: 1 immagine = statica, 2+ = carosello scorrevole/automatico.
    L'ordine conta: le regole più specifiche (brace/griglia) vanno prima di quelle generiche (secondi). */
-const immaginiSezioni = [
+/* "var" invece di "const": permette a menu-data.js di sostituire questo
+   array con le foto storytelling caricate su Firebase, quando presenti. */
+var immaginiSezioni = [
   { id:"antipasti", chiavi:["antipast","starter"], imgs:["antipasti.webp","antipasti-2.webp","antipasti-3.webp"],
     didascalie:[
       {it:"Taglieri della tradizione", en:"Traditional charcuterie boards"},
