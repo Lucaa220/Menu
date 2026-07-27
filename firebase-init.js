@@ -8,7 +8,7 @@
    il menu funziona comunque normalmente per i clienti.
    ========================================================= */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getDatabase, ref, update, increment }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
 import { getAuth }
@@ -19,7 +19,10 @@ try {
   if (!cfg || !cfg.apiKey || cfg.apiKey.startsWith("INSERISCI_")) {
     console.warn("[Firebase] Configurazione non compilata: tracking disattivato.");
   } else {
-    const app = initializeApp(cfg);
+    /* Riusa l'app di default se un altro script (es. admin.js) l'ha già
+       inizializzata: initializeApp() una seconda volta con lo stesso
+       nome genera un errore "app/duplicate-app". */
+    const app = getApps().length ? getApp() : initializeApp(cfg);
     const db  = getDatabase(app);
     const auth = getAuth(app);
 
