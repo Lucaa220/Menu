@@ -52,7 +52,11 @@ const ui = {
 };
 
 /* ---------- DATI ALLERGENI (14 allergeni UE) ---------- */
-const allergeniData = [
+/* "var" (non "const"): così è leggibile come window.allergeniData anche
+   dai moduli ES (es. admin-menu.js) per disegnare le checkbox nel
+   pannello "Gestisci menu". L'elenco resta comunque fisso: nessuna
+   parte del sito lo modifica mai. */
+var allergeniData = [
   { ic:"🌾", it:"Cereali contenenti glutine",              en:"Cereals containing gluten" },
   { ic:"🦐", it:"Crostacei e prodotti a base di crostacei", en:"Crustaceans and products thereof" },
   { ic:"🥚", it:"Uova e prodotti a base di uova",           en:"Eggs and products thereof" },
@@ -71,7 +75,11 @@ const allergeniData = [
 
 
 /* ---------- DATI MENU PIATTI ---------- */
-const piattiData = {
+/* "var" invece di "const": permette a menu-data.js (un modulo separato,
+   caricato per gestire i dati da Firebase) di sostituire il contenuto
+   di questa variabile quando il gestore ha compilato il menu online.
+   Se Firebase non risponde, resta questo valore statico di riserva. */
+var piattiData = {
   it: {
     titolo: "Menù",
     nota: [
@@ -236,7 +244,7 @@ const piattiData = {
 
 
 /* ---------- DATI VINI ---------- */
-const viniData = {
+var viniData = {  // "var": vedi nota sopra a piattiData
   it: {
     titolo: "Vini",
     sezioni: [
@@ -369,7 +377,7 @@ const viniData = {
 
 
 /* ---------- DATI BIRRE ---------- */
-const birreData = {
+var birreData = {  // "var": vedi nota sopra a piattiData
   it: {
     titolo: "Birre",
     sezioni: [
@@ -402,7 +410,7 @@ const birreData = {
    presente in viniData (versione italiana). Se un campo manca, viene
    mostrato "Da scrivere"/"To be written"; se manca la foto, il riquadro
    immagine viene semplicemente nascosto. */
-const schedeVini = {
+var schedeVini = {  // "var": vedi nota sopra a piattiData
   /* --- Le Bollicine --- */
   "Prosecco Superiore DOCG Valdobbiadene \"Bandarossa\" – Bortolomiol": {
     foto: "vini/bandarossa.webp",
@@ -1081,7 +1089,7 @@ Object.keys(aliasSchedeVini).forEach(nomeEN => {
    I campi birrificio non sono ancora compilati (mostrano "Da scrivere" /
    "To be written"): basta aggiungere il testo qui sotto quando disponibile,
    la scheda si aggiorna automaticamente. */
-const schedeBirre = {
+var schedeBirre = {  // "var": vedi nota sopra a piattiData
   "Guglielmo – Hell Non Filtrata": {
     it: {
       birrificio: "",
