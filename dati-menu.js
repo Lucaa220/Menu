@@ -27,7 +27,11 @@ const ui = {
     tornaCategorie: "← Torna alle categorie",
     avvisoPranzo: "Alcuni piatti non sono disponibili a pranzo (11:30–15:00)",
     cercaPiatti: "Cerca un piatto...",
-    nessunRisultato: "Nessun piatto trovato."
+    nessunRisultato: "Nessun piatto trovato.",
+    vinoVuoto: "Nessun vino disponibile al momento.",
+    birraVuoto: "Nessuna birra disponibile al momento.",
+    menuFissi: "Menù a Prezzo Fisso",
+    menuFissiVuoto: "Nessun menù a prezzo fisso disponibile al momento."
   },
   en: {
     catTitolo: "What would you like to see?",
@@ -47,7 +51,11 @@ const ui = {
     tornaCategorie: "← Back to categories",
     avvisoPranzo: "Some dishes are not available at lunch (11:30 AM–3:00 PM)",
     cercaPiatti: "Search for a dish...",
-    nessunRisultato: "No dishes found."
+    nessunRisultato: "No dishes found.",
+    vinoVuoto: "No wines available at the moment.",
+    birraVuoto: "No beers available at the moment.",
+    menuFissi: "Fixed-Price Menus",
+    menuFissiVuoto: "No fixed-price menus available at the moment."
   }
 };
 
@@ -398,6 +406,20 @@ var birreData = {  // "var": vedi nota sopra a piattiData
       ]}
     ]
   }
+};
+
+/* ---------- MENÙ A PREZZO FISSO ----------
+   Vuoto di default: questa è una funzionalità gestita interamente dal
+   pannello admin (crea/modifica i menù da "Gestisci menu" → "Menù
+   fissi"). Ogni voce di "menu" ha: nome, prezzo, descrizione/note
+   opzionali, e "portate" (es. Antipasto, Primo...) con le voci
+   incluse. La categoria compare nel sito pubblico solo quando esiste
+   almeno un menù attivo (vedi app.js). "var" per lo stesso motivo di
+   piattiData/viniData/birreData: menu-data.js può sovrascriverla con
+   i dati di Firebase. */
+var menuFissiData = {
+  it: { titolo: "Menù a Prezzo Fisso", menu: [] },
+  en: { titolo: "Fixed-Price Menus", menu: [] }
 };
 
 /* ---------- SCHEDA TECNICA VINO ----------
