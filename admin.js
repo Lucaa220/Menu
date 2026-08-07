@@ -33,19 +33,24 @@ const loginForm = document.getElementById('login-form');
 const loginErr  = document.getElementById('login-err');
 const btnLogout = document.getElementById('btn-logout');
 
-/* ---------- SCHEDE (Statistiche / Gestisci menu) ---------- */
+/* ---------- SCHEDE (Statistiche / Gestisci menu / Manutenzione) ---------- */
 const tabBtnStat = document.getElementById('dash-tab-stat');
 const tabBtnMenu = document.getElementById('dash-tab-menu');
+const tabBtnManutenzione = document.getElementById('dash-tab-manutenzione');
 const tabStat = document.getElementById('tab-statistiche');
 const tabMenu = document.getElementById('tab-gestisci-menu');
+const tabManutenzione = document.getElementById('tab-manutenzione');
 let menuAdminAvviato = false;
+let manutenzioneAvviata = false;
 function mostraScheda(nome){
-  const stat = nome === 'stat';
-  if (tabBtnStat) tabBtnStat.classList.toggle('attivo', stat);
-  if (tabBtnMenu) tabBtnMenu.classList.toggle('attivo', !stat);
-  if (tabStat) tabStat.style.display = stat ? '' : 'none';
-  if (tabMenu) tabMenu.style.display = stat ? 'none' : '';
-  if (!stat && !menuAdminAvviato){
+  if (tabBtnStat) tabBtnStat.classList.toggle('attivo', nome==='stat');
+  if (tabBtnMenu) tabBtnMenu.classList.toggle('attivo', nome==='menu');
+  if (tabBtnManutenzione) tabBtnManutenzione.classList.toggle('attivo', nome==='manutenzione');
+  if (tabStat) tabStat.style.display = nome==='stat' ? '' : 'none';
+  if (tabMenu) tabMenu.style.display = nome==='menu' ? '' : 'none';
+  if (tabManutenzione) tabManutenzione.style.display = nome==='manutenzione' ? '' : 'none';
+
+  if (nome==='menu' && !menuAdminAvviato){
     menuAdminAvviato = true;
     /* admin-menu.js espone questa funzione globale quando il suo modulo
        viene eseguito: costruisce l'interfaccia "Gestisci menu" al primo
@@ -60,9 +65,19 @@ function mostraScheda(nome){
       setTimeout(avviaQuandoPronto, 100);
     })();
   }
+  if (nome==='manutenzione' && !manutenzioneAvviata){
+    manutenzioneAvviata = true;
+    let tentativi = 0;
+    (function avviaQuandoPronto(){
+      if (typeof window.avviaAdminManutenzione === 'function') { window.avviaAdminManutenzione(); return; }
+      if (tentativi++ > 40) { tabManutenzione.innerHTML = '<p class="vuoto">Impossibile caricare il pannello di manutenzione (admin-menu.js). Ricarica la pagina.</p>'; return; }
+      setTimeout(avviaQuandoPronto, 100);
+    })();
+  }
 }
 if (tabBtnStat) tabBtnStat.addEventListener('click', () => mostraScheda('stat'));
 if (tabBtnMenu) tabBtnMenu.addEventListener('click', () => mostraScheda('menu'));
+if (tabBtnManutenzione) tabBtnManutenzione.addEventListener('click', () => mostraScheda('manutenzione'));
 
 /* ---------- AUTH ---------- */
 onAuthStateChanged(auth, user => {
@@ -78,12 +93,76 @@ loginForm.addEventListener('submit', async (e) => {
 });
 btnLogout.addEventListener('click', () => signOut(auth));
 
-function mostraLogin(){ loginView.style.display=''; dashView.style.display='none'; }
-function mostraDashboard(){
+function mostraLogin(){ loginView.style.display=''; dashView.style.display='none'; fermaTimerInattivita(); }
+async function mostraDashboard(){
   loginView.style.display='none'; dashView.style.display='';
   mostraScheda('stat');
   inizializzaPeriodi();
+  resettaTimerInattivita();
+  try { await caricaChartJS(); } catch(e){ console.warn('[admin] Chart.js non caricato:', e.message); }
   aggiornaTutto();
+}
+
+/* ---------- TIMEOUT DI SESSIONE PER INATTIVITÀ ----------
+   Se l'admin dimentica una sessione aperta su un dispositivo condiviso
+   (es. tablet in sala), dopo un lungo periodo di inattività la
+   sessione si chiude da sola invece di restare accessibile a chiunque
+   passi di lì. Un avviso compare 2 minuti prima, con la possibilità
+   di restare connessi con un click. */
+const INATTIVITA_LIMITE_MS = 30 * 60 * 1000; // 30 minuti
+const INATTIVITA_AVVISO_MS = 2 * 60 * 1000;  // avviso 2 minuti prima della scadenza
+let _timerAvviso = null, _timerScadenza = null, _elAvvisoInattivita = null;
+
+function elAvvisoInattivita(){
+  if (_elAvvisoInattivita) return _elAvvisoInattivita;
+  const el = document.createElement('div');
+  el.className = 'avviso-inattivita';
+  el.innerHTML = `<p>Sessione in scadenza per inattività tra 2 minuti.</p>
+    <button type="button" id="btn-resta-connesso">Resta connesso</button>`;
+  document.body.appendChild(el);
+  el.querySelector('#btn-resta-connesso').addEventListener('click', resettaTimerInattivita);
+  _elAvvisoInattivita = el;
+  return el;
+}
+function resettaTimerInattivita(){
+  clearTimeout(_timerAvviso); clearTimeout(_timerScadenza);
+  elAvvisoInattivita().classList.remove('attivo');
+  _timerAvviso = setTimeout(() => elAvvisoInattivita().classList.add('attivo'), INATTIVITA_LIMITE_MS - INATTIVITA_AVVISO_MS);
+  _timerScadenza = setTimeout(() => signOut(auth), INATTIVITA_LIMITE_MS);
+}
+function fermaTimerInattivita(){
+  clearTimeout(_timerAvviso); clearTimeout(_timerScadenza);
+  if (_elAvvisoInattivita) _elAvvisoInattivita.classList.remove('attivo');
+}
+/* Qualunque interazione mentre si è nella dashboard rimanda la scadenza */
+['mousedown','keydown','touchstart','scroll'].forEach(ev => {
+  document.addEventListener(ev, () => {
+    if (dashView.style.display !== 'none') resettaTimerInattivita();
+  }, { passive:true });
+});
+
+/* ---------- CHART.JS: caricato solo qui, non nella pagina pubblica ----------
+   Il menu che vedono i clienti non deve scaricare Chart.js (~200 KB):
+   serve solo a questa dashboard, quindi lo richiediamo dinamicamente
+   al primo accesso autenticato invece di includerlo staticamente in
+   index.html per ogni visita. */
+let _chartJsPromise = null;
+function caricaChartJS(){
+  if (window.Chart) return Promise.resolve();
+  if (_chartJsPromise) return _chartJsPromise;
+  _chartJsPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+    s.onload = () => {
+      Chart.defaults.color = 'rgba(250,245,236,.75)';
+      Chart.defaults.font.family = "'Georgia', serif";
+      Chart.defaults.borderColor = 'rgba(200,164,100,.18)';
+      resolve();
+    };
+    s.onerror = () => reject(new Error('impossibile scaricare Chart.js dal CDN'));
+    document.head.appendChild(s);
+  });
+  return _chartJsPromise;
 }
 
 /* ---------- DATE HELPERS ---------- */
@@ -162,12 +241,12 @@ async function leggiIntervallo(dDa, dA){
    struttura degli oggetti giornalieri (visite, lingua/*, categoria/*, ecc.) */
 function aggrega(daysObj, giorniAttesi){
   const out = { visite:0, lingua:{}, categoria:{}, sezioni_piatti:{},
-                schede_vino_aperte:{}, allergeni_aperti:0, dispositivo:{}, ora:{} };
+                schede_vino_aperte:{}, schede_birra_aperte:{}, allergeni_aperti:0, dispositivo:{}, ora:{} };
   for (const g of giorniAttesi) {
     const d = daysObj[g]; if (!d) continue;
     out.visite += Number(d.visite||0);
     out.allergeni_aperti += Number(d.allergeni_aperti||0);
-    for (const k of ['lingua','categoria','sezioni_piatti','schede_vino_aperte','dispositivo','ora']) {
+    for (const k of ['lingua','categoria','sezioni_piatti','schede_vino_aperte','schede_birra_aperte','dispositivo','ora']) {
       const src = d[k] || {};
       for (const chiave of Object.keys(src)) {
         out[k][chiave] = (out[k][chiave]||0) + Number(src[chiave]||0);
@@ -185,10 +264,6 @@ const COL = {
   ciano:'#4a8a99', ambra:'#dcbe86', prugna:'#8b3a62', beige:'#e8dcc4'
 };
 const PALETTE = [COL.oro, COL.vino, COL.verde, COL.ciano, COL.prugna, COL.ambra, COL.beige, COL.panna];
-
-Chart.defaults.color = 'rgba(250,245,236,.75)';
-Chart.defaults.font.family = "'Georgia', serif";
-Chart.defaults.borderColor = 'rgba(200,164,100,.18)';
 
 function somma(o){ return Object.values(o||{}).reduce((s,v)=>s+Number(v||0),0); }
 function delta(b,a){
@@ -276,7 +351,8 @@ async function aggiornaTutto(){
       kpi('Mobile',        B.dispositivo.mobile||0,  A.dispositivo.mobile||0),
       kpi('Desktop',       B.dispositivo.desktop||0, A.dispositivo.desktop||0),
       kpi('Allergeni aperti', B.allergeni_aperti, A.allergeni_aperti),
-      kpi('Schede vino aperte', somma(B.schede_vino_aperte), somma(A.schede_vino_aperte))
+      kpi('Schede vino aperte', somma(B.schede_vino_aperte), somma(A.schede_vino_aperte)),
+      kpi('Schede birra aperte', somma(B.schede_birra_aperte), somma(A.schede_birra_aperte))
     ].join('');
 
     /* Grafici (periodo B) */
@@ -288,6 +364,7 @@ async function aggiornaTutto(){
     /* Classifiche (periodo B) */
     classifica('lista-sezioni', B.sezioni_piatti);
     classifica('lista-vini',    B.schede_vino_aperte);
+    classifica('lista-birre',   B.schede_birra_aperte);
   } catch(err){
     kpisEl.innerHTML = '<p class="vuoto">Errore lettura dati: '+(err.code||err.message)+'</p>';
     console.error(err);
