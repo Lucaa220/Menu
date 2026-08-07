@@ -4,20 +4,75 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#2b1810" />
-<meta name="description" content="Menu - Trattoria da Franca" />
+
+<!-- ===== SEO di base =====
+     NOTA: personalizza indirizzo/telefono/orari qui sotto e nello
+     Schema.org più in basso, e sostituisci l'URL segnaposto con il
+     dominio reale una volta pubblicato il sito. -->
+<meta name="description" content="Menu digitale della Trattoria da Franca: piatti, vini e birre in italiano e inglese, con allergeni e schede tecniche dei vini." />
+<link rel="canonical" href="https://lucaa220.github.io/Menu/" />
 <title>Trattoria da Franca — Menu</title>
+
+<!-- ===== Condivisione social (Open Graph / Twitter Card) ===== -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Trattoria da Franca — Menu" />
+<meta property="og:description" content="Sfoglia il nostro menu digitale: piatti, vini e birre, in italiano e inglese." />
+<meta property="og:image" content="https://lucaa220.github.io/Menu/da-franca.png" />
+<meta property="og:locale" content="it_IT" />
+<meta property="og:locale:alternate" content="en_GB" />
+<meta property="og:url" content="https://lucaa220.github.io/Menu/" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<!-- ===== Icone / PWA ===== -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E🍷%3C/text%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="manifest" href="manifest.json" />
+
+<!-- ===== Performance: connessioni anticipate ai domini esterni usati ===== -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://menu-8ae9e-default-rtdb.europe-west1.firebasedatabase.app" />
+<link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin />
 <link rel="preload" as="image" href="da-franca.png" fetchpriority="high" />
+
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="admin.css" />
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+
+<!-- Chart.js NON viene più caricato qui: serve solo alla dashboard admin,
+     non ai clienti che aprono il menu. Viene caricato dinamicamente da
+     admin.js solo al primo accesso autenticato (vedi caricaChartJS()). -->
+
+<!-- ===== Dati strutturati per i motori di ricerca (Schema.org) =====
+     Compila indirizzo, telefono e orari reali: aiuta Google a mostrare
+     il ristorante nei risultati locali / Google Maps. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Trattoria da Franca",
+  "servesCuisine": "Italiana",
+  "url": "https://lucaa220.github.io/Menu/",
+  "image": "https://lucaa220.github.io/Menu/da-franca.png",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "COMPLETA-INDIRIZZO",
+    "addressLocality": "COMPLETA-CITTA",
+    "postalCode": "COMPLETA-CAP",
+    "addressCountry": "IT"
+  },
+  "telephone": "COMPLETA-TELEFONO",
+  "hasMenu": "https://lucaa220.github.io/Menu/"
+}
+</script>
 </head>
 <body class="mostra-hero">
+
+<a href="#contenuto-principale" class="salta-al-contenuto">Vai al contenuto</a>
 
 <!-- =========================================================
      VISTA SITO — menu pubblico per i clienti
      ========================================================= -->
-<div id="vista-sito">
+<div id="vista-sito" role="main" aria-label="Menu">
+  <span id="contenuto-principale" tabindex="-1"></span>
 
   <!-- Scheletro di caricamento: coperto tutto finché menu-data.js non ha
        deciso se usare i dati di Firebase o quelli statici di riserva.
@@ -63,6 +118,9 @@
       </button>
       <button type="button" class="bottone" onclick="mostraContenuto('birre')">
         <span class="icona" aria-hidden="true">🍺</span> <span id="cat-birre"></span>
+      </button>
+      <button type="button" class="bottone" id="cat-btn-menufissi" onclick="mostraContenuto('menufissi')" style="display:none">
+        <span class="icona" aria-hidden="true">📋</span> <span id="cat-menufissi"></span>
       </button>
     </div>
     <button type="button" class="link-testo" onclick="mostraLingua()" id="cat-cambia-lingua"></button>
@@ -115,6 +173,15 @@
   <!-- Bottone area riservata: apre la dashboard admin (angolo basso-destra) -->
   <a href="#admin" class="area-riservata" id="btn-area-riservata" aria-label="Area riservata / accesso admin" title="Area riservata">🔒</a>
 
+  <!-- Footer con contatti/orari: utile ai clienti e ai motori di ricerca
+       locali. SOSTITUIRE i segnaposto con i dati reali del locale. -->
+  <footer class="footer-sito">
+    <p class="footer-nome">Trattoria da Franca</p>
+    <p class="footer-riga">📍 COMPLETA-INDIRIZZO, COMPLETA-CITTÀ</p>
+    <p class="footer-riga">📞 <a href="tel:+39COMPLETA-TELEFONO">COMPLETA-TELEFONO</a></p>
+    <p class="footer-riga">🕒 COMPLETA-ORARI (es. 12:00–15:00 · 19:00–23:00)</p>
+  </footer>
+
 </div>
 
 <!-- =========================================================
@@ -150,6 +217,7 @@
     <div class="dash-tabs">
       <button type="button" id="dash-tab-stat" class="attivo">📊 Statistiche</button>
       <button type="button" id="dash-tab-menu">🍽️ Gestisci menu</button>
+      <button type="button" id="dash-tab-manutenzione">🛡️ Manutenzione</button>
     </div>
 
     <div id="tab-statistiche">
@@ -208,11 +276,19 @@
         <h2>Schede vino più aperte (B)</h2>
         <ol class="classifica" id="lista-vini"><li class="vuoto">—</li></ol>
       </div>
+      <div class="pannello">
+        <h2>Schede birra più aperte (B)</h2>
+        <ol class="classifica" id="lista-birre"><li class="vuoto">—</li></ol>
+      </div>
     </div>
     </div>
 
     <div id="tab-gestisci-menu" style="display:none">
       <p class="loading">Apri questa scheda per caricare il pannello di modifica del menu…</p>
+    </div>
+
+    <div id="tab-manutenzione" style="display:none">
+      <p class="loading">Apri questa scheda per caricare backup, cestino e registro modifiche…</p>
     </div>
   </section>
 
@@ -280,6 +356,19 @@
       });
     }
   })();
+</script>
+
+<!-- Service worker: caching della shell statica per apertura più veloce
+     e un minimo di funzionamento offline. Se il file manca (es. sito
+     aperto come file locale) fallisce silenziosamente, senza impatti. -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(e){
+        console.warn('[sw] registrazione non riuscita:', e.message);
+      });
+    });
+  }
 </script>
 
 </body>
