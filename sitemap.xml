@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Trattoria da Franca — sitemap.xml
+  Il sito è una singola pagina (menu pubblico + area admin dietro
+  #admin, non indicizzabile separatamente): la sitemap contiene quindi
+  un solo indirizzo. Aggiorna "loc" con il dominio reale una volta
+  pubblicato, e "lastmod" quando aggiorni contenuti importanti del
+  sito stesso (non serve aggiornarla quando modifichi solo il menu
+  dal pannello admin, dato che il contenuto è caricato dinamicamente).
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://lucaa220.github.io/Menu/</loc>
+    <lastmod>2026-08-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

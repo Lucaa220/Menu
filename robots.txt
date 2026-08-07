@@ -1,0 +1,10 @@
+# Trattoria da Franca — robots.txt
+# Il menu pubblico è liberamente indicizzabile.
+# L'area riservata (#admin) è comunque protetta da login: non è un
+# percorso separato per i motori di ricerca (è la stessa pagina, con
+# un semplice hash nell'URL), quindi non richiede una regola Disallow.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://lucaa220.github.io/Menu/sitemap.xml
