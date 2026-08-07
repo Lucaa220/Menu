@@ -96,6 +96,7 @@ function costruisciDatiLegacy(grezzo){
                   en:{titolo:'Menu', nota:(grezzo.nota&&grezzo.nota.en)||[], sezioni:[], coperto:(grezzo.coperto&&grezzo.coperto.en)||''} },
     viniData:   { it:{titolo:'Vini', sezioni:[]}, en:{titolo:'Wines', sezioni:[]} },
     birreData:  { it:{titolo:'Birre', sezioni:[]}, en:{titolo:'Beers', sezioni:[]} },
+    menuFissiData: { it:{titolo:'Menù a Prezzo Fisso', menu:[]}, en:{titolo:'Fixed-Price Menus', menu:[]} },
     schedeVini: {},
     schedeBirre: {},
     immaginiSezioni: []
@@ -118,9 +119,10 @@ function costruisciDatiLegacy(grezzo){
           const voce = vociDb[itemId];
           if (!voce) return null;
           const nome = (voce.nome && voce.nome[lingua]) || (voce.nome && voce.nome.it) || '';
-          if (sez.tabella) return [nome, voce.prezzi || [], itemId];
+          const disponibile = voce.disponibile !== false; // assente/true = disponibile
+          if (sez.tabella) return [nome, voce.prezzi || [], itemId, disponibile];
           if (gruppo === 'piatti') return [nome, voce.prezzo || '', voce.giorniNonDisponibiliPranzo || null, voce.allergeni || [], itemId];
-          return [nome, voce.prezzo || '', itemId];
+          return [nome, voce.prezzo || '', itemId, disponibile];
         }).filter(Boolean);
         datasetPerGruppo[gruppo][lingua].sezioni.push(sezOut);
       });
@@ -167,6 +169,30 @@ function costruisciDatiLegacy(grezzo){
     });
   });
 
+  /* ---------- MENÙ A PREZZO FISSO ----------
+     Struttura indipendente da gruppi/sezioni/voci (ogni menù è un
+     oggetto autonomo con le sue "portate"): non è condivisa con la
+     ricostruzione generica sopra. Un menù senza "attivo" (assente o
+     true) è considerato disponibile; "attivo:false" lo nasconde dal
+     sito pubblico esattamente come "disponibile:false" per vini/birre,
+     pur restando modificabile dal pannello admin. */
+  const menuFissiDb = grezzo.menuFissi || {};
+  const ordineMenuFissi = grezzo.menuFissiOrdine || [];
+  ordineMenuFissi.forEach(id=>{
+    const mf = menuFissiDb[id];
+    if (!mf || mf.attivo === false) return;
+    ['it','en'].forEach(lingua=>{
+      const nome = (mf.nome && mf.nome[lingua]) || (mf.nome && mf.nome.it) || '';
+      const descrizione = (mf.descrizione && mf.descrizione[lingua]) || '';
+      const note = (mf.note && mf.note[lingua]) || '';
+      const portate = (mf.portate || []).map(p=>({
+        titolo: (p.titolo && p.titolo[lingua]) || (p.titolo && p.titolo.it) || '',
+        voci: (p.voci || []).map(v => (v.nome && v.nome[lingua]) || (v.nome && v.nome.it) || '').filter(Boolean)
+      })).filter(p => p.titolo || p.voci.length);
+      out.menuFissiData[lingua].menu.push({ id, nome, prezzo: mf.prezzo || '', descrizione, note, portate });
+    });
+  });
+
   return out;
 }
 
@@ -182,6 +208,7 @@ function applicaDatiLegacy(dati){
   if (!window._menuStaticoOriginale){
     window._menuStaticoOriginale = {
       piattiData: window.piattiData, viniData: window.viniData, birreData: window.birreData,
+      menuFissiData: window.menuFissiData,
       schedeVini: window.schedeVini, schedeBirre: window.schedeBirre,
       immaginiSezioni: window.immaginiSezioni
     };
@@ -189,6 +216,7 @@ function applicaDatiLegacy(dati){
   window.piattiData = dati.piattiData;
   window.viniData = dati.viniData;
   window.birreData = dati.birreData;
+  window.menuFissiData = dati.menuFissiData;
   window.schedeVini = dati.schedeVini;
   window.schedeBirre = dati.schedeBirre;
   window.immaginiSezioni = dati.immaginiSezioni;
@@ -248,7 +276,8 @@ async function avvia(){
          (es. subito dopo l'attivazione di Firebase, prima della
          migrazione manuale). */
       const haContenuti = ['piattiData','viniData','birreData'].some(k =>
-        dati[k].it.sezioni.length || dati[k].en.sezioni.length);
+        dati[k].it.sezioni.length || dati[k].en.sezioni.length)
+        || dati.menuFissiData.it.menu.length || dati.menuFissiData.en.menu.length;
       if (haContenuti) applicaDatiLegacy(dati);
     }
   } catch(e){
