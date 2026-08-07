@@ -38,6 +38,21 @@ body.admin{
   padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit}
 .head button:hover{background:rgba(200,164,100,.15);color:var(--a-panna);border-color:var(--a-oro)}
 
+/* ---- AVVISO INATTIVITÀ (timeout sessione) ---- */
+.avviso-inattivita{
+  position:fixed;left:50%;bottom:-100px;transform:translateX(-50%);
+  z-index:200;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  background:linear-gradient(180deg,#3d2418,#2b1810);border:1px solid var(--a-oro);
+  border-radius:999px;padding:10px 20px;box-shadow:var(--a-ombra);
+  transition:bottom .25s ease;max-width:92vw;
+}
+.avviso-inattivita.attivo{bottom:20px}
+.avviso-inattivita p{margin:0;color:var(--a-panna);font-size:.9rem}
+.avviso-inattivita button{
+  background:linear-gradient(180deg,var(--a-panna),#e8dcc4);color:#2b1810;font-weight:700;
+  border:none;border-radius:999px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:.85rem;
+}
+
 .pannello{background:rgba(20,10,6,.55);border:1px solid var(--a-divisore);
   border-radius:var(--a-raggio);padding:20px;margin-bottom:20px;box-shadow:var(--a-ombra);
   backdrop-filter:blur(6px);}
@@ -189,6 +204,9 @@ body.admin{
   border:1px solid var(--a-divisore);border-radius:10px;padding:12px;margin-bottom:10px;
   background:rgba(20,10,6,.22);
 }
+.mg-voce-non-disponibile{border-color:var(--a-rosso);background:rgba(179,66,59,.08);opacity:.75}
+.mg-disponibile{color:var(--a-oro-chiaro)}
+.mg-nota-non-disponibile{margin:6px 0 0;font-size:.8rem;color:#f0a29d;font-style:italic}
 .mg-voce-testa{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .mg-voce-testa input[type=text]{flex:1;min-width:140px}
 .mg-prezzo-singolo{display:flex !important;flex-direction:row !important;align-items:center;gap:6px;width:auto !important;font-size:.8rem;color:var(--a-oro-chiaro);white-space:nowrap}
@@ -217,4 +235,30 @@ body.admin{
   padding:10px;border-radius:10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.9rem;
 }
 .mg-aggiungi:hover{background:rgba(200,164,100,.2);color:var(--a-panna)}
+.mg-aggiungi:disabled{opacity:.5;cursor:default;background:rgba(200,164,100,.1)}
 .mg-aggiungi-sezione{margin-top:14px}
+
+/* ---- MENÙ A PREZZO FISSO ---- */
+.mg-menufisso .mg-sezione-titoli{min-width:220px}
+.mg-portate-titolo{margin:0 0 10px;font-size:.85rem;color:var(--a-oro-chiaro);
+  text-transform:uppercase;letter-spacing:.04em;font-weight:400}
+.mg-portata .mg-voce-testa input[type=text]{min-width:120px}
+.mg-portata-voci{margin-top:10px;padding-left:14px;border-left:2px solid var(--a-divisore)}
+.mg-voce-portata{padding:8px 0}
+.mg-voce-portata .mg-foto-campi{flex-direction:row;gap:8px}
+.mg-voce-portata .mg-foto-campi input{flex:1;min-width:110px}
+
+/* ---- PANNELLO MANUTENZIONE: backup / cestino / registro ---- */
+.mnt-lista{margin-top:12px}
+.mnt-cestino-riga{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  border:1px solid var(--a-divisore);border-radius:10px;padding:10px 14px;margin-bottom:8px;
+  background:rgba(20,10,6,.25);
+}
+.mnt-cestino-info{display:flex;flex-direction:column;gap:3px}
+.mnt-cestino-info strong{color:var(--a-panna)}
+.mnt-cestino-azioni{display:flex;gap:8px;flex-wrap:wrap}
+.mnt-log-lista{list-style:none;margin:0;padding:0;max-height:420px;overflow-y:auto}
+.mnt-log-lista li{padding:8px 4px;border-bottom:1px dashed var(--a-divisore);font-size:.88rem;color:var(--a-muted)}
+.mnt-log-lista li:last-child{border-bottom:none}
+.mnt-log-quando{color:var(--a-oro-chiaro);font-variant-numeric:tabular-nums;white-space:nowrap}
