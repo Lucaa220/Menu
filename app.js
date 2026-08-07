@@ -34,8 +34,10 @@ function pushStato(nuovo, opzioni){
 function _chiudiModaliSenzaStorico(){
   document.getElementById('overlay-allergeni').classList.remove('attiva');
   document.removeEventListener('keydown', chiudiAllergeniEsc);
+  rilasciaFocus(document.getElementById('overlay-allergeni'));
   document.getElementById('overlay-scheda-vino').classList.remove('attiva');
   document.removeEventListener('keydown', chiudiSchedaVinoEsc);
+  rilasciaFocus(document.getElementById('overlay-scheda-vino'));
 }
 window.addEventListener('popstate', (e) => {
   const precedente = statoCorrente;
@@ -179,8 +181,14 @@ function creaCarosello(imgs, altTesto, didascalie){
       },120);
     },{passive:true});
 
-    const intervalId=setInterval(()=>{ if(!pausato) vaiA(indice+1); },4500);
-    caroselliAttivi.push(intervalId);
+    /* Chi ha attivato "riduci movimento" nel sistema operativo non vede
+       l'avanzamento automatico del carosello, ma può comunque scorrere
+       manualmente con le frecce, i pallini o lo swipe. */
+    const preferisceMenoMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!preferisceMenoMovimento){
+      const intervalId=setInterval(()=>{ if(!pausato) vaiA(indice+1); },4500);
+      caroselliAttivi.push(intervalId);
+    }
   }
 
   return wrap;
@@ -247,7 +255,42 @@ function aggiornaTestiCategoria(){
     document.getElementById('cat-birre').textContent=t.birre;
     document.getElementById('cat-cambia-lingua').textContent=t.cambiaLingua;
     document.documentElement.lang=linguaCorrente;
+
+    /* Il bottone "Menù a prezzo fisso" compare solo se l'admin ne ha
+       creato almeno uno attivo: chi non usa questa funzione non vede
+       una categoria vuota e inutile. */
+    const btnMenuFissi=document.getElementById('cat-btn-menufissi');
+    if (btnMenuFissi){
+      const elenco = menuFissiData && menuFissiData[linguaCorrente] && menuFissiData[linguaCorrente].menu;
+      btnMenuFissi.style.display = (elenco && elenco.length) ? '' : 'none';
+      document.getElementById('cat-menufissi').textContent = t.menuFissi;
+    }
   } catch(e){ console.warn('[aggiornaTestiCategoria]', e); }
+}
+
+/* ---------- ACCESSIBILITÀ: trappola del focus nei popup =========
+   Quando un popup è aperto, il tasto Tab deve restare "dentro" di
+   esso (senza scappare dietro, invisibile) e alla chiusura il focus
+   torna al bottone che lo aveva aperto — comportamento atteso da chi
+   naviga a tastiera o con uno screen reader. */
+let _elementoFocusPrimaDelModale = null;
+function intrappolaFocus(overlayEl){
+  _elementoFocusPrimaDelModale = document.activeElement;
+  const focusabili = overlayEl.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusabili.length) focusabili[0].focus();
+  function gestisciTab(e){
+    if (e.key !== 'Tab' || !focusabili.length) return;
+    const primo = focusabili[0], ultimo = focusabili[focusabili.length-1];
+    if (e.shiftKey && document.activeElement === primo){ e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && document.activeElement === ultimo){ e.preventDefault(); primo.focus(); }
+  }
+  overlayEl.addEventListener('keydown', gestisciTab);
+  overlayEl._gestisciTab = gestisciTab;
+}
+function rilasciaFocus(overlayEl){
+  if (overlayEl._gestisciTab){ overlayEl.removeEventListener('keydown', overlayEl._gestisciTab); overlayEl._gestisciTab = null; }
+  if (_elementoFocusPrimaDelModale && document.body.contains(_elementoFocusPrimaDelModale)) _elementoFocusPrimaDelModale.focus();
+  _elementoFocusPrimaDelModale = null;
 }
 
 /* ---------- POPUP ALLERGENI ---------- */
@@ -271,6 +314,7 @@ function mostraAllergeni(){
 
   document.getElementById('overlay-allergeni').classList.add('attiva');
   document.addEventListener('keydown',chiudiAllergeniEsc);
+  intrappolaFocus(document.getElementById('overlay-allergeni'));
   pushStato(Object.assign({},statoCorrente,{modale:'allergeni'}));
 
   /* ANALYTICS: apertura popup allergeni */
@@ -279,6 +323,7 @@ function mostraAllergeni(){
 function chiudiAllergeni(){
   document.getElementById('overlay-allergeni').classList.remove('attiva');
   document.removeEventListener('keydown',chiudiAllergeniEsc);
+  rilasciaFocus(document.getElementById('overlay-allergeni'));
   if (statoCorrente && statoCorrente.modale==='allergeni') history.back();
 }
 function chiudiAllergeniEsc(e){ if(e.key==='Escape') chiudiAllergeni(); }
@@ -333,6 +378,7 @@ function mostraSchedaVino(nome, tipo){
 
   document.getElementById('overlay-scheda-vino').classList.add('attiva');
   document.addEventListener('keydown',chiudiSchedaVinoEsc);
+  intrappolaFocus(document.getElementById('overlay-scheda-vino'));
   pushStato(Object.assign({},statoCorrente,{modale:'scheda'}));
 
   /* ANALYTICS: apertura scheda tecnica (per nome, distinta tra vino e birra) */
@@ -341,6 +387,7 @@ function mostraSchedaVino(nome, tipo){
 function chiudiSchedaVino(){
   document.getElementById('overlay-scheda-vino').classList.remove('attiva');
   document.removeEventListener('keydown',chiudiSchedaVinoEsc);
+  rilasciaFocus(document.getElementById('overlay-scheda-vino'));
   if (statoCorrente && statoCorrente.modale==='scheda') history.back();
 }
 function chiudiSchedaVinoEsc(e){ if(e.key==='Escape') chiudiSchedaVino(); }
@@ -362,6 +409,7 @@ function creaOsservatore(){
 /* ---------- RENDER CONTENUTO ---------- */
 function mostraContenuto(tipo, daPopState){
   fermaCaroselli();
+  if (tipo === 'menufissi'){ renderizzaMenuFissi(daPopState); return; }
   const t=ui[linguaCorrente];
   const dataset={piatti:piattiData,vini:viniData,birre:birreData}[tipo];
   if(!dataset)return;
@@ -415,6 +463,7 @@ function mostraContenuto(tipo, daPopState){
   const osservatore=creaOsservatore();
   const immaginiUsate=new Set();
   const sezioniPiattiTracciate=new Set();
+  let visibiliCategoria=0; // conta le voci mostrate in tutta la categoria (usato per vini/birre: vedi sotto)
 
   dati.sezioni.forEach(sez=>{
     // Inserisce la fotografia/carosello storytelling PRIMA della sezione (una volta per tipologia)
@@ -459,7 +508,14 @@ function mostraContenuto(tipo, daPopState){
       const intest=document.createElement('div');intest.className='intestazione';
       sez.colonne.forEach(c=>{const s=document.createElement('span');s.textContent=c;intest.appendChild(s);});
       tab.appendChild(intest);
-      sez.items.forEach(([nome,prezzi])=>{
+      let visTab=0;
+      sez.items.forEach(([nome,prezzi,,disponibile])=>{
+        /* "disponibile" (4° elemento) arriva solo dal menu gestito da Firebase
+           (vedi menu-data.js): quando è esplicitamente false, il vino/birra è
+           stato segnato come non disponibile dal pannello admin e va
+           nascosto dal menu pubblico, senza toccare i dati salvati. */
+        if((tipo==='vini'||tipo==='birre')&&disponibile===false)return;
+        visTab++;
         const riga=document.createElement('div');riga.className='voce-vino';
         const n=document.createElement('span');n.className='nome';n.textContent=nome;
         if(tipo==='vini') n.appendChild(creaBottoneScheda(nome,'vino'));
@@ -468,11 +524,13 @@ function mostraContenuto(tipo, daPopState){
         prezzi.forEach(pp=>{const s=document.createElement('span');s.textContent=pp;p.appendChild(s);});
         riga.appendChild(n);riga.appendChild(p);tab.appendChild(riga);
       });
-      sezDiv.appendChild(tab);corpo.appendChild(sezDiv);
+      if(visTab>0){ sezDiv.appendChild(tab);corpo.appendChild(sezDiv); }
+      visibiliCategoria+=visTab;
     } else {
       let vis=0;
-      sez.items.forEach(([nome,prezzo,g])=>{
-        if(tipo==='piatti'&&vaNascostoAPranzo(g))return;
+      sez.items.forEach(([nome,prezzo,terzo,quarto])=>{
+        if(tipo==='piatti'&&vaNascostoAPranzo(terzo))return;
+        if((tipo==='vini'||tipo==='birre')&&quarto===false)return;
         vis++;
         const riga=document.createElement('div');riga.className='voce';
         if(tipo==='piatti'){
@@ -485,8 +543,20 @@ function mostraContenuto(tipo, daPopState){
         riga.appendChild(n);riga.appendChild(p);sezDiv.appendChild(riga);
       });
       if(vis>0)corpo.appendChild(sezDiv);
+      visibiliCategoria+=vis;
     }
   });
+
+  /* Se un'intera categoria vini/birre risulta senza voci visibili (es. tutte
+     segnate come "non disponibile" dal pannello admin), mostra un messaggio
+     invece di lasciare la schermata vuota. Per i piatti questo caso è già
+     coperto dal messaggio "nessun risultato" della ricerca. */
+  if((tipo==='vini'||tipo==='birre') && visibiliCategoria===0){
+    const msg=document.createElement('p');
+    msg.className='vuoto-ricerca';
+    msg.textContent = tipo==='vini' ? (t.vinoVuoto||'Nessun vino disponibile al momento.') : (t.birraVuoto||'Nessuna birra disponibile al momento.');
+    corpo.appendChild(msg);
+  }
 
   if(dati.coperto){
     const c=document.createElement('div');c.className='coperto';c.textContent=dati.coperto;
@@ -526,6 +596,81 @@ function mostraContenuto(tipo, daPopState){
   aggiornaBodyClass('contenuto');
   window.scrollTo(0,0);
   if(!daPopState) pushStato({schermata:'contenuto', tipo});
+}
+
+/* ---------- RENDER "MENÙ A PREZZO FISSO" ----------
+   Categoria strutturalmente diversa dalle altre (piatti/vini/birre
+   sono liste di sezioni con voci a sé; qui invece ogni "menù" è una
+   scheda a prezzo unico con più portate incluse), quindi ha il suo
+   renderer dedicato invece di passare dal ciclo generico sopra. */
+function renderizzaMenuFissi(daPopState){
+  const t=ui[linguaCorrente];
+  const dati=(menuFissiData && menuFissiData[linguaCorrente]) || {titolo:'',menu:[]};
+
+  /* ANALYTICS: categoria consultata */
+  _traccia({ 'categoria/menufissi': 1 });
+
+  document.getElementById('nav-indietro').textContent=t.indietro;
+  document.getElementById('nav-lingua').textContent=t.cambiaLingua;
+  document.getElementById('cont-torna').textContent=t.tornaCategorie;
+  document.getElementById('cont-titolo').textContent=dati.titolo;
+
+  document.getElementById('cont-nota').innerHTML='';
+
+  const corpo=document.getElementById('cont-corpo');corpo.innerHTML='';
+  const elenco=dati.menu||[];
+
+  if(!elenco.length){
+    const msg=document.createElement('p');msg.className='vuoto-ricerca';
+    msg.textContent=t.menuFissiVuoto;
+    corpo.appendChild(msg);
+  } else {
+    elenco.forEach(mf=>{
+      const card=document.createElement('article');card.className='menu-fisso-card';
+
+      const testa=document.createElement('div');testa.className='menu-fisso-testa';
+      const h3=document.createElement('h3');h3.textContent=mf.nome;
+      testa.appendChild(h3);
+      if(mf.prezzo){
+        const prezzo=document.createElement('span');prezzo.className='menu-fisso-prezzo';prezzo.textContent=mf.prezzo;
+        testa.appendChild(prezzo);
+      }
+      card.appendChild(testa);
+
+      if(mf.descrizione){
+        const p=document.createElement('p');p.className='menu-fisso-descrizione';p.textContent=mf.descrizione;
+        card.appendChild(p);
+      }
+
+      (mf.portate||[]).forEach(portata=>{
+        if(!portata.titolo && !portata.voci.length) return;
+        const blocco=document.createElement('div');blocco.className='menu-fisso-portata';
+        if(portata.titolo){
+          const h4=document.createElement('h4');h4.textContent=portata.titolo;
+          blocco.appendChild(h4);
+        }
+        if(portata.voci.length){
+          const ul=document.createElement('ul');
+          portata.voci.forEach(v=>{const li=document.createElement('li');li.textContent=v;ul.appendChild(li);});
+          blocco.appendChild(ul);
+        }
+        card.appendChild(blocco);
+      });
+
+      if(mf.note){
+        const nota=document.createElement('p');nota.className='menu-fisso-note';nota.textContent=mf.note;
+        card.appendChild(nota);
+      }
+
+      corpo.appendChild(card);
+    });
+  }
+
+  nascondiTutte();
+  document.getElementById('schermata-contenuto').classList.add('attiva');
+  aggiornaBodyClass('contenuto');
+  window.scrollTo(0,0);
+  if(!daPopState) pushStato({schermata:'contenuto', tipo:'menufissi'});
 }
 
 /* Espone le funzioni chiamate dagli onclick */
