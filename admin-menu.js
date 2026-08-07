@@ -12,15 +12,19 @@
 
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
+import { ref as dbRef, get as dbGet, remove as dbRemove, push as dbPush }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import { MenuData } from "./menu-data.js";
 
 const GIORNI = [
   { c:'lun', l:'Lun' }, { c:'mar', l:'Mar' }, { c:'mer', l:'Mer' },
   { c:'gio', l:'Gio' }, { c:'ven', l:'Ven' }, { c:'sab', l:'Sab' }, { c:'dom', l:'Dom' }
 ];
-const NOMI_GRUPPO = { piatti:'Piatti', vini:'Vini', birre:'Birre' };
+const NOMI_GRUPPO = { piatti:'Piatti', vini:'Vini', birre:'Birre', menufissi:'Menù fissi' };
 
 let contenitore = null;
+let contenitoreManutenzione = null;
 let grezzo = null;          // albero grezzo in memoria (cache locale, rispecchia Firebase)
 let gruppoAttivo = 'piatti';
 
@@ -31,7 +35,9 @@ function alberoVuoto(){
     nota: { it:[], en:[] },
     gruppi: { piatti:{ordine:[]}, vini:{ordine:[]}, birre:{ordine:[]} },
     sezioni: {},
-    voci: {}
+    voci: {},
+    menuFissiOrdine: [],   // ordine di visualizzazione dei menù a prezzo fisso
+    menuFissi: {}          // ogni voce: nome, prezzo, descrizione, note, attivo, portate[]
   };
 }
 
@@ -42,11 +48,22 @@ window.avviaAdminMenu = async function avviaAdminMenu(){
   contenitore.innerHTML = '<p class="loading">Caricamento menu…</p>';
   try {
     grezzo = (await MenuData.leggiMenuGrezzo()) || alberoVuoto();
+    grezzo.menuFissiOrdine = grezzo.menuFissiOrdine || [];
+    grezzo.menuFissi = grezzo.menuFissi || {};
   } catch(e){
     contenitore.innerHTML = '<p class="vuoto">Errore di lettura da Firebase: ' + escHtml(e.message) + '</p>';
     return;
   }
   disegna();
+};
+
+/* ---------- AVVIO PANNELLO MANUTENZIONE (backup / cestino / registro) ---------- */
+window.avviaAdminManutenzione = async function avviaAdminManutenzione(){
+  contenitoreManutenzione = document.getElementById('tab-manutenzione');
+  if (!contenitoreManutenzione) return;
+  contenitoreManutenzione.innerHTML = '<p class="loading">Caricamento…</p>';
+  await disegnaManutenzione();
+  attaccaListenerManutenzione();
 };
 
 /* ---------- HELPER ---------- */
@@ -72,6 +89,54 @@ async function segnalaEsito(el, promessa){
     el.classList.add('mg-errore');
     window.alert('Errore nel salvataggio: ' + e.message);
   }
+}
+
+/* ---------- CESTINO E REGISTRO MODIFICHE ----------
+   Vivono FUORI dall'albero "menu/" (in cestino/ e log/ a livello di
+   radice del database) apposta: il sito pubblico legge tutto il nodo
+   "menu/" per mostrare il menu ai clienti, quindi tenere questi dati
+   altrove evita di far scaricare a ogni visitatore anche il cestino e
+   i log (peso inutile, oltre che email dell'admin non necessarie sul
+   sito pubblico). Le regole di sicurezza di Firebase per cestino/ e
+   log/ vanno impostate come "lettura e scrittura solo autenticati". */
+function utenteCorrente(){
+  try {
+    const a = getAuth(MenuData.app());
+    return (a && a.currentUser && a.currentUser.email) || 'sconosciuto';
+  } catch(e){ return 'sconosciuto'; }
+}
+async function registraLog(azione, dettaglio){
+  const database = MenuData.db();
+  if (!database) return;
+  try {
+    await dbPush(dbRef(database, 'log'), { quando: Date.now(), chi: utenteCorrente(), azione, dettaglio: dettaglio || '' });
+  } catch(e){ console.warn('[admin-menu] registrazione log fallita:', e.message); }
+}
+async function leggiLog(){
+  const database = MenuData.db();
+  if (!database) return {};
+  try {
+    const snap = await dbGet(dbRef(database, 'log'));
+    return snap.exists() ? snap.val() : {};
+  } catch(e){ return {}; }
+}
+async function spostaNelCestino(voce){
+  const database = MenuData.db();
+  if (!database) return;
+  await dbPush(dbRef(database, 'cestino'), Object.assign({ quando: Date.now(), da: utenteCorrente() }, voce));
+}
+async function leggiCestino(){
+  const database = MenuData.db();
+  if (!database) return {};
+  try {
+    const snap = await dbGet(dbRef(database, 'cestino'));
+    return snap.exists() ? snap.val() : {};
+  } catch(e){ return {}; }
+}
+async function rimuoviDalCestino(pushId){
+  const database = MenuData.db();
+  if (!database) return;
+  await dbRemove(dbRef(database, 'cestino/'+pushId));
 }
 
 /* ---------- STORAGE: compressione lato client + upload ---------- */
@@ -140,6 +205,7 @@ function disegna(){
       <button type="button" data-azione="cambia-gruppo" data-gruppo="piatti" class="attivo">Piatti</button>
       <button type="button" data-azione="cambia-gruppo" data-gruppo="vini">Vini</button>
       <button type="button" data-azione="cambia-gruppo" data-gruppo="birre">Birre</button>
+      <button type="button" data-azione="cambia-gruppo" data-gruppo="menufissi">Menù fissi</button>
     </div>
     <div id="mg-corpo-gruppo"></div>
   `;
@@ -151,6 +217,21 @@ function disegnaGruppo(gruppo){
   gruppoAttivo = gruppo;
   document.querySelectorAll('#mg-tabs button').forEach(b => b.classList.toggle('attivo', b.dataset.gruppo === gruppo));
   const corpo = document.getElementById('mg-corpo-gruppo');
+
+  if (gruppo === 'menufissi'){
+    const ordine = grezzo.menuFissiOrdine || [];
+    const html = ordine.map((id,i) => htmlMenuFisso(id, grezzo.menuFissi[id] || {}, i, ordine.length)).join('');
+    corpo.innerHTML = `
+      <div class="pannello">
+        <h2>Menù a prezzo fisso</h2>
+        <p class="mg-nota-mini">Crea qui i menù a prezzo fisso (es. "Menù Turistico € 25"): appariranno come categoria a sé nel sito pubblico, con le portate incluse. La categoria compare ai clienti solo quando c'è almeno un menù "Disponibile".</p>
+        ${html || '<p class="vuoto">Nessun menù a prezzo fisso. Aggiungine uno qui sotto.</p>'}
+        <button type="button" class="mg-aggiungi mg-aggiungi-sezione" data-azione="aggiungi-menufisso">+ Aggiungi menù a prezzo fisso</button>
+      </div>
+    `;
+    return;
+  }
+
   const ordine = (grezzo.gruppi[gruppo] && grezzo.gruppi[gruppo].ordine) || [];
   const sezioniHtml = ordine.map((sectionId, i) => htmlSezione(gruppo, sectionId, grezzo.sezioni[sectionId], i, ordine.length)).join('');
   corpo.innerHTML = `
@@ -190,6 +271,85 @@ function htmlSezione(gruppo, sectionId, sez, indice, totale){
       ${voci.map((itemId,i)=>htmlVoce(gruppo, itemId, sez, i, voci.length)).join('') || '<p class="vuoto-mini">Nessuna voce in questa sezione.</p>'}
     </div>
     <button type="button" class="mg-aggiungi" data-azione="aggiungi-voce">+ Aggiungi voce</button>
+  </div>`;
+}
+
+/* ---------- MENÙ A PREZZO FISSO ----------
+   Struttura diversa dalle sezioni "normali": ogni menù è una scheda
+   autonoma (nome, prezzo, descrizione, note, disponibilità) con un
+   elenco di "portate" (es. Antipasto, Primo...), ciascuna con le sue
+   voci. Tutto annidato in un unico oggetto per menù (non condiviso
+   con altre sezioni), quindi più semplice da salvare: ogni modifica
+   alle portate riscrive semplicemente l'intero array "portate". */
+function htmlMenuFisso(id, mf, indice, totale){
+  const nome = mf.nome || {it:'',en:''};
+  const descrizione = mf.descrizione || {it:'',en:''};
+  const note = mf.note || {it:'',en:''};
+  const attivo = mf.attivo !== false; // assente/true = disponibile
+  const portate = mf.portate || [];
+  return `<div class="mg-sezione mg-menufisso${!attivo ? ' mg-voce-non-disponibile' : ''}" data-menufisso="${id}">
+    <div class="mg-sezione-testa">
+      <div class="mg-frecce">
+        <button type="button" data-azione="sposta-menufisso" data-dir="su" ${indice===0?'disabled':''} title="Sposta su">▲</button>
+        <button type="button" data-azione="sposta-menufisso" data-dir="giu" ${indice===totale-1?'disabled':''} title="Sposta giù">▼</button>
+      </div>
+      <div class="mg-sezione-titoli">
+        <input type="text" data-campo="mf-nome-it" placeholder="Nome del menù (italiano)" value="${escHtml(nome.it)}">
+        <input type="text" data-campo="mf-nome-en" placeholder="Nome del menù (inglese)" value="${escHtml(nome.en)}">
+      </div>
+      <label class="mg-prezzo-singolo">Prezzo<input type="text" data-campo="mf-prezzo" value="${escHtml(mf.prezzo||'')}" placeholder="€ 25,00"></label>
+      <label class="mg-check-inline" title="Se disattivato, il menù resta salvato qui ma sparisce dal menu pubblico">
+        <input type="checkbox" data-campo="mf-attivo" ${attivo?'checked':''}> Disponibile
+      </label>
+      <button type="button" class="mg-elimina" data-azione="elimina-menufisso">Elimina menù</button>
+    </div>
+    ${!attivo ? '<p class="mg-nota-non-disponibile">Non disponibile: nascosto dal menu pubblico.</p>' : ''}
+    <div class="mg-riga-2">
+      <label>Descrizione introduttiva IT <span class="mg-nota-mini">(facoltativa)</span><textarea data-campo="mf-descrizione-it" rows="2" placeholder="Es. Un percorso tra i sapori della tradizione">${escHtml(descrizione.it)}</textarea></label>
+      <label>Descrizione introduttiva EN <span class="mg-nota-mini">(facoltativa)</span><textarea data-campo="mf-descrizione-en" rows="2" placeholder="e.g. A journey through traditional flavours">${escHtml(descrizione.en)}</textarea></label>
+    </div>
+    <div class="mg-voci">
+      <h4 class="mg-portate-titolo">Portate incluse</h4>
+      ${portate.map((p,i)=>htmlPortata(p,i,portate.length)).join('') || '<p class="vuoto-mini">Nessuna portata. Aggiungine una qui sotto (es. Antipasto, Primo, Dolce...).</p>'}
+      <button type="button" class="mg-aggiungi" data-azione="aggiungi-portata">+ Aggiungi portata</button>
+    </div>
+    <div class="mg-riga-2">
+      <label>Note IT <span class="mg-nota-mini">es. "Bevande escluse"</span><input type="text" data-campo="mf-note-it" value="${escHtml(note.it)}"></label>
+      <label>Note EN<input type="text" data-campo="mf-note-en" value="${escHtml(note.en)}"></label>
+    </div>
+  </div>`;
+}
+function htmlPortata(portata, indice, totale){
+  const titolo = portata.titolo || {it:'',en:''};
+  const voci = portata.voci || [];
+  return `<div class="mg-voce mg-portata" data-portata="${indice}">
+    <div class="mg-voce-testa">
+      <div class="mg-frecce">
+        <button type="button" data-azione="sposta-portata" data-dir="su" ${indice===0?'disabled':''}>▲</button>
+        <button type="button" data-azione="sposta-portata" data-dir="giu" ${indice===totale-1?'disabled':''}>▼</button>
+      </div>
+      <input type="text" data-campo="portata-titolo-it" placeholder="Portata (italiano), es. Antipasto" value="${escHtml(titolo.it)}">
+      <input type="text" data-campo="portata-titolo-en" placeholder="Portata (inglese), es. Starter" value="${escHtml(titolo.en)}">
+      <button type="button" class="mg-elimina" data-azione="elimina-portata">Elimina portata</button>
+    </div>
+    <div class="mg-portata-voci">
+      ${voci.map((v,vi)=>htmlVocePortata(v,vi,voci.length)).join('') || '<p class="vuoto-mini">Nessuna voce in questa portata.</p>'}
+      <button type="button" class="mg-aggiungi" data-azione="aggiungi-voce-portata">+ Aggiungi voce</button>
+    </div>
+  </div>`;
+}
+function htmlVocePortata(voce, indice, totale){
+  const nome = voce.nome || {it:'',en:''};
+  return `<div class="mg-foto-riga mg-voce-portata" data-voce-portata="${indice}">
+    <div class="mg-foto-campi">
+      <input type="text" data-campo="vp-nome-it" placeholder="Nome piatto (italiano)" value="${escHtml(nome.it)}">
+      <input type="text" data-campo="vp-nome-en" placeholder="Nome piatto (inglese)" value="${escHtml(nome.en)}">
+    </div>
+    <div class="mg-frecce">
+      <button type="button" data-azione="sposta-voce-portata" data-dir="su" ${indice===0?'disabled':''}>▲</button>
+      <button type="button" data-azione="sposta-voce-portata" data-dir="giu" ${indice===totale-1?'disabled':''}>▼</button>
+    </div>
+    <button type="button" class="mg-elimina" data-azione="elimina-voce-portata">Rimuovi</button>
   </div>`;
 }
 
@@ -235,8 +395,14 @@ function htmlVoce(gruppo, itemId, sez, i, totale){
 
   const extraPiatti = gruppo === 'piatti' ? (htmlDisponibilitaPranzo(itemId, voce) + htmlAllergeni(voce)) : '';
   const extraScheda = (gruppo === 'vini' || gruppo === 'birre') ? htmlScheda(gruppo, voce) : '';
+  const eVinoOBirra = (gruppo === 'vini' || gruppo === 'birre');
+  const disponibile = voce.disponibile !== false; // assente/true = disponibile
+  const disponibilitaHtml = eVinoOBirra ? `
+      <label class="mg-check-inline mg-disponibile" title="Se disattivato, la voce resta salvata qui ma sparisce dal menu pubblico (es. bottiglia terminata)">
+        <input type="checkbox" data-campo="disponibile" ${disponibile?'checked':''}> Disponibile
+      </label>` : '';
 
-  return `<div class="mg-voce" data-voce="${itemId}">
+  return `<div class="mg-voce${eVinoOBirra && !disponibile ? ' mg-voce-non-disponibile' : ''}" data-voce="${itemId}">
     <div class="mg-voce-testa">
       <div class="mg-frecce">
         <button type="button" data-azione="sposta-voce" data-dir="su" ${i===0?'disabled':''}>▲</button>
@@ -245,8 +411,10 @@ function htmlVoce(gruppo, itemId, sez, i, totale){
       <input type="text" data-campo="nome-it" placeholder="Nome (italiano)" value="${escHtml(nome.it)}">
       <input type="text" data-campo="nome-en" placeholder="Nome (inglese)" value="${escHtml(nome.en)}">
       ${prezziHtml}
+      ${disponibilitaHtml}
       <button type="button" class="mg-elimina" data-azione="elimina-voce">Elimina</button>
     </div>
+    ${eVinoOBirra && !disponibile ? '<p class="mg-nota-non-disponibile">Non disponibile: nascosta dal menu pubblico.</p>' : ''}
     ${extraPiatti}
     ${extraScheda}
   </div>`;
@@ -341,6 +509,12 @@ async function gestisciChange(e){
     return segnalaEsito(t, () => MenuData.scriviPercorso('coperto', grezzo.coperto));
   }
 
+  /* Menù a prezzo fisso: campi con prefisso dedicato (mf-, portata-, vp-),
+     gestiti a parte perché la struttura dati è diversa da sezioni/voci. */
+  if (campo.indexOf('mf-') === 0 || campo.indexOf('portata-') === 0 || campo.indexOf('vp-') === 0){
+    return gestisciChangeMenuFisso(t, campo);
+  }
+
   const elFoto = t.closest('[data-foto-indice]');
   const elVoce = t.closest('[data-voce]');
   const elSezione = t.closest('[data-sezione]');
@@ -395,6 +569,13 @@ async function gestisciChange(e){
       voce.allergeni = Array.from(set).sort((x,y)=>x-y);
       return segnalaEsito(t, () => MenuData.scriviPercorso('voci/'+itemId+'/allergeni', voce.allergeni));
     }
+    if (campo === 'disponibile'){
+      voce.disponibile = t.checked;
+      await segnalaEsito(t, () => MenuData.scriviPercorso('voci/'+itemId+'/disponibile', voce.disponibile));
+      registraLog(t.checked ? 'Voce segnata disponibile' : 'Voce segnata NON disponibile', (voce.nome&&voce.nome.it)||itemId);
+      disegnaGruppo(gruppoAttivo); // aggiorna l'evidenziazione della voce non disponibile
+      return;
+    }
     if (campo.indexOf('scheda-') === 0){
       const resto = campo.slice('scheda-'.length);      // es: "zona-it" oppure "descrizione-en"
       const lingua = resto.slice(-2);                     // "it" oppure "en"
@@ -431,14 +612,104 @@ async function gestisciChange(e){
   }
 }
 
+async function gestisciChangeMenuFisso(t, campo){
+  const elMf = t.closest('[data-menufisso]');
+  if (!elMf) return;
+  const mfId = elMf.dataset.menufisso;
+  const mf = grezzo.menuFissi[mfId];
+  if (!mf) return;
+
+  if (campo === 'mf-nome-it' || campo === 'mf-nome-en'){
+    mf.nome = mf.nome || {it:'',en:''};
+    mf.nome[campo.endsWith('it')?'it':'en'] = t.value;
+    return segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/nome', mf.nome));
+  }
+  if (campo === 'mf-prezzo'){
+    mf.prezzo = t.value;
+    return segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/prezzo', mf.prezzo));
+  }
+  if (campo === 'mf-descrizione-it' || campo === 'mf-descrizione-en'){
+    mf.descrizione = mf.descrizione || {it:'',en:''};
+    mf.descrizione[campo.endsWith('it')?'it':'en'] = t.value;
+    return segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/descrizione', mf.descrizione));
+  }
+  if (campo === 'mf-note-it' || campo === 'mf-note-en'){
+    mf.note = mf.note || {it:'',en:''};
+    mf.note[campo.endsWith('it')?'it':'en'] = t.value;
+    return segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/note', mf.note));
+  }
+  if (campo === 'mf-attivo'){
+    mf.attivo = t.checked;
+    await segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/attivo', mf.attivo));
+    registraLog(t.checked ? 'Menù fisso segnato disponibile' : 'Menù fisso segnato NON disponibile', (mf.nome&&mf.nome.it)||mfId);
+    disegnaGruppo('menufissi');
+    return;
+  }
+
+  const elPortata = t.closest('[data-portata]');
+  const ip = elPortata ? Number(elPortata.dataset.portata) : null;
+  if (ip === null) return;
+  const portata = (mf.portate||[])[ip];
+  if (!portata) return;
+
+  if (campo === 'portata-titolo-it' || campo === 'portata-titolo-en'){
+    portata.titolo = portata.titolo || {it:'',en:''};
+    portata.titolo[campo.endsWith('it')?'it':'en'] = t.value;
+    return segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', mf.portate));
+  }
+
+  const elVp = t.closest('[data-voce-portata]');
+  const ivp = elVp ? Number(elVp.dataset.vocePortata) : null;
+  if (ivp === null) return;
+  const voce = (portata.voci||[])[ivp];
+  if (!voce) return;
+  if (campo === 'vp-nome-it' || campo === 'vp-nome-en'){
+    voce.nome = voce.nome || {it:'',en:''};
+    voce.nome[campo.endsWith('it')?'it':'en'] = t.value;
+    return segnalaEsito(t, () => MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', mf.portate));
+  }
+}
+
 async function gestisciClick(e){
   const btn = e.target.closest('[data-azione]');
   if (!btn) return;
   const azione = btn.dataset.azione;
   if (azione === 'carica-foto' || azione === 'carica-foto-scheda') return; // gestiti da 'change' sull'input file
 
+  /* I pulsanti "+ Aggiungi..." creano subito una riga vuota senza un
+     popup di conferma nel mezzo: senza questa protezione, un doppio
+     click/tap rapido potrebbe far scattare l'azione due volte prima
+     che il pannello si ridisegni, creando due voci duplicate. Il
+     ridisegno (disegnaGruppo) sostituisce comunque il pulsante con uno
+     nuovo già abilitato; il timeout è solo una rete di sicurezza per i
+     casi in cui l'azione si interrompe prima di ridisegnare. */
+  if (azione.indexOf('aggiungi') === 0 && !btn.disabled){
+    btn.disabled = true;
+    setTimeout(() => { btn.disabled = false; }, 1500);
+  }
+
   if (azione === 'cambia-gruppo'){ disegnaGruppo(btn.dataset.gruppo); return; }
   if (azione === 'importa'){ return eseguiMigrazione(); }
+
+  /* Menù a prezzo fisso: struttura diversa da sezioni/voci, gestita a parte */
+  if (gruppoAttivo === 'menufissi'){
+    if (azione === 'aggiungi-menufisso') return aggiungiMenuFisso();
+    const elMf = btn.closest('[data-menufisso]');
+    const mfId = elMf && elMf.dataset.menufisso;
+    if (azione === 'elimina-menufisso') return eliminaMenuFisso(mfId);
+    if (azione === 'sposta-menufisso') return spostaMenuFisso(mfId, btn.dataset.dir);
+    if (azione === 'aggiungi-portata') return aggiungiPortata(mfId);
+    const elPortata = btn.closest('[data-portata]');
+    const ip = elPortata ? Number(elPortata.dataset.portata) : null;
+    if (azione === 'elimina-portata') return eliminaPortata(mfId, ip);
+    if (azione === 'sposta-portata') return spostaPortata(mfId, ip, btn.dataset.dir);
+    if (azione === 'aggiungi-voce-portata') return aggiungiVocePortata(mfId, ip);
+    const elVp = btn.closest('[data-voce-portata]');
+    const ivp = elVp ? Number(elVp.dataset.vocePortata) : null;
+    if (azione === 'elimina-voce-portata') return eliminaVocePortata(mfId, ip, ivp);
+    if (azione === 'sposta-voce-portata') return spostaVocePortata(mfId, ip, ivp, btn.dataset.dir);
+    return;
+  }
 
   if (azione === 'aggiungi-sezione'){ return aggiungiSezione(); }
 
@@ -478,22 +749,38 @@ async function aggiungiSezione(){
     });
     grezzo.sezioni[sectionId] = nuovaSezione;
     grezzo.gruppi[gruppoAttivo].ordine = nuovoOrdine;
+    registraLog('Nuova sezione creata', titoloIt + ' (' + NOMI_GRUPPO[gruppoAttivo] + ')');
     disegnaGruppo(gruppoAttivo);
   } catch(e){ window.alert('Errore: ' + e.message); }
 }
 
 async function eliminaSezione(sectionId){
-  if (!window.confirm('Eliminare questa sezione e tutte le voci al suo interno? Non si può annullare.')) return;
   const sez = grezzo.sezioni[sectionId];
-  const patch = { ['sezioni/'+sectionId]: null };
-  (sez.ordine || []).forEach(id => { patch['voci/'+id] = null; });
-  const nuovoOrdine = grezzo.gruppi[gruppoAttivo].ordine.filter(id => id !== sectionId);
-  patch['gruppi/'+gruppoAttivo+'/ordine'] = nuovoOrdine;
+  const nomeSez = (sez.titolo && sez.titolo.it) || sectionId;
+  if (!window.confirm('Spostare la sezione "'+nomeSez+'" e tutte le sue voci nel cestino?\nPotrai ripristinarla dalla scheda "Manutenzione" finché non svuoti il cestino.')) return;
+
+  // Copia completa (sezione + voci) da salvare nel cestino prima di rimuoverla
+  const vociComplete = {};
+  (sez.ordine || []).forEach(id => { vociComplete[id] = grezzo.voci[id]; });
+
   try {
+    /* Prima la copia di sicurezza nel cestino, POI la rimozione dai dati
+       live: se la scrittura nel cestino fallisse (rete assente, ecc.),
+       ci fermiamo qui e la sezione resta intatta — invece di rischiare
+       di cancellarla dal menu pubblico senza che sia mai arrivata nel
+       cestino. */
+    await spostaNelCestino({ tipo:'sezione', gruppo:gruppoAttivo, id:sectionId, nome:nomeSez, dati:{ sezione:sez, voci:vociComplete } });
+
+    const patch = { ['sezioni/'+sectionId]: null };
+    (sez.ordine || []).forEach(id => { patch['voci/'+id] = null; });
+    const nuovoOrdine = grezzo.gruppi[gruppoAttivo].ordine.filter(id => id !== sectionId);
+    patch['gruppi/'+gruppoAttivo+'/ordine'] = nuovoOrdine;
     await MenuData.aggiornaPercorsi(patch);
+
     delete grezzo.sezioni[sectionId];
     (sez.ordine || []).forEach(id => delete grezzo.voci[id]);
     grezzo.gruppi[gruppoAttivo].ordine = nuovoOrdine;
+    registraLog('Sezione spostata nel cestino', nomeSez + ' (' + NOMI_GRUPPO[gruppoAttivo] + ')');
     disegnaGruppo(gruppoAttivo);
   } catch(e){ window.alert('Errore: ' + e.message); }
 }
@@ -510,6 +797,148 @@ async function spostaSezione(sectionId, dir){
   } catch(e){ window.alert('Errore: ' + e.message); }
 }
 
+/* ---------- AZIONI: MENÙ A PREZZO FISSO ---------- */
+function idMenuFissiUsati(){ return new Set(Object.keys(grezzo.menuFissi || {})); }
+
+/* Dopo aver aggiunto una riga vuota (menù/portata/voce), porta lo sguardo
+   e il focus della tastiera direttamente lì: niente finestre popup da
+   compilare a parte, si scrive subito nel campo appena creato. */
+function focusNuovoElemento(selettore){
+  requestAnimationFrame(() => {
+    const el = document.querySelector(selettore);
+    if (el){ el.scrollIntoView({ behavior:'smooth', block:'center' }); el.focus(); }
+  });
+}
+
+async function aggiungiMenuFisso(){
+  const id = MenuData.idUnico('nuovo-menu', 'mf', idMenuFissiUsati());
+  const nuovoMenu = { nome:{it:'',en:''}, prezzo:'', descrizione:{it:'',en:''}, note:{it:'',en:''}, attivo:true, portate:[] };
+  const nuovoOrdine = (grezzo.menuFissiOrdine||[]).concat(id);
+  try {
+    await MenuData.aggiornaPercorsi({ ['menuFissi/'+id]: nuovoMenu, ['menuFissiOrdine']: nuovoOrdine });
+    grezzo.menuFissi[id] = nuovoMenu;
+    grezzo.menuFissiOrdine = nuovoOrdine;
+    registraLog('Nuovo menù a prezzo fisso creato', '(da nominare)');
+    disegnaGruppo('menufissi');
+    focusNuovoElemento('[data-menufisso="'+id+'"] input[data-campo="mf-nome-it"]');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+async function eliminaMenuFisso(mfId){
+  const mf = grezzo.menuFissi[mfId];
+  const nome = (mf.nome && mf.nome.it) || mfId;
+  if (!window.confirm('Spostare il menù "'+nome+'" nel cestino?\nPotrai ripristinarlo dalla scheda "Manutenzione" finché non svuoti il cestino.')) return;
+  try {
+    // Copia di sicurezza nel cestino PRIMA di rimuovere dai dati live (vedi eliminaSezione)
+    await spostaNelCestino({ tipo:'menufisso', gruppo:'menufissi', id:mfId, nome, dati:{ menuFisso: mf } });
+
+    const nuovoOrdine = (grezzo.menuFissiOrdine||[]).filter(id => id !== mfId);
+    await MenuData.aggiornaPercorsi({ ['menuFissi/'+mfId]: null, ['menuFissiOrdine']: nuovoOrdine });
+
+    delete grezzo.menuFissi[mfId];
+    grezzo.menuFissiOrdine = nuovoOrdine;
+    registraLog('Menù a prezzo fisso spostato nel cestino', nome);
+    disegnaGruppo('menufissi');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+async function spostaMenuFisso(mfId, dir){
+  const ordine = grezzo.menuFissiOrdine || [];
+  const i = ordine.indexOf(mfId);
+  const j = dir === 'su' ? i-1 : i+1;
+  if (j < 0 || j >= ordine.length) return;
+  [ordine[i], ordine[j]] = [ordine[j], ordine[i]];
+  try {
+    await MenuData.scriviPercorso('menuFissiOrdine', ordine);
+    disegnaGruppo('menufissi');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+async function aggiungiPortata(mfId){
+  const mf = grezzo.menuFissi[mfId];
+  const nuovePortate = (mf.portate || []).concat([{ titolo:{it:'',en:''}, voci:[] }]);
+  const indice = nuovePortate.length - 1;
+  try {
+    await MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', nuovePortate);
+    mf.portate = nuovePortate;
+    disegnaGruppo('menufissi');
+    focusNuovoElemento('[data-menufisso="'+mfId+'"] [data-portata="'+indice+'"] input[data-campo="portata-titolo-it"]');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+async function eliminaPortata(mfId, indice){
+  const mf = grezzo.menuFissi[mfId];
+  if (!window.confirm('Eliminare questa portata e le voci al suo interno?')) return;
+  const sblocca = bloccaCard(document.querySelector('[data-menufisso="'+mfId+'"]'));
+  const nuovePortate = mf.portate.slice();
+  nuovePortate.splice(indice, 1);
+  try {
+    await MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', nuovePortate);
+    mf.portate = nuovePortate;
+    disegnaGruppo('menufissi');
+  } catch(e){ window.alert('Errore: ' + e.message); sblocca(); }
+}
+
+async function spostaPortata(mfId, indice, dir){
+  const mf = grezzo.menuFissi[mfId];
+  const j = dir === 'su' ? indice-1 : indice+1;
+  if (j < 0 || j >= mf.portate.length) return;
+  const nuovePortate = mf.portate.slice();
+  [nuovePortate[indice], nuovePortate[j]] = [nuovePortate[j], nuovePortate[indice]];
+  try {
+    await MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', nuovePortate);
+    mf.portate = nuovePortate;
+    disegnaGruppo('menufissi');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+async function aggiungiVocePortata(mfId, indicePortata){
+  const mf = grezzo.menuFissi[mfId];
+  const portata = mf.portate[indicePortata];
+  const nuovePortate = mf.portate.slice();
+  const nuoveVoci = (portata.voci || []).concat([{ nome:{it:'',en:''} }]);
+  nuovePortate[indicePortata] = Object.assign({}, portata, { voci: nuoveVoci });
+  const indiceVoce = nuoveVoci.length - 1;
+  try {
+    await MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', nuovePortate);
+    mf.portate = nuovePortate;
+    disegnaGruppo('menufissi');
+    focusNuovoElemento('[data-menufisso="'+mfId+'"] [data-portata="'+indicePortata+'"] [data-voce-portata="'+indiceVoce+'"] input[data-campo="vp-nome-it"]');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+async function eliminaVocePortata(mfId, indicePortata, indiceVoce){
+  const mf = grezzo.menuFissi[mfId];
+  const portata = mf.portate[indicePortata];
+  if (!window.confirm('Rimuovere questa voce dalla portata?')) return;
+  const sblocca = bloccaCard(document.querySelector('[data-menufisso="'+mfId+'"]'));
+  const nuovePortate = mf.portate.slice();
+  const nuoveVoci = portata.voci.slice();
+  nuoveVoci.splice(indiceVoce, 1);
+  nuovePortate[indicePortata] = Object.assign({}, portata, { voci: nuoveVoci });
+  try {
+    await MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', nuovePortate);
+    mf.portate = nuovePortate;
+    disegnaGruppo('menufissi');
+  } catch(e){ window.alert('Errore: ' + e.message); sblocca(); }
+}
+
+async function spostaVocePortata(mfId, indicePortata, indiceVoce, dir){
+  const mf = grezzo.menuFissi[mfId];
+  const portata = mf.portate[indicePortata];
+  const j = dir === 'su' ? indiceVoce-1 : indiceVoce+1;
+  if (j < 0 || j >= portata.voci.length) return;
+  const nuovePortate = mf.portate.slice();
+  const nuoveVoci = portata.voci.slice();
+  [nuoveVoci[indiceVoce], nuoveVoci[j]] = [nuoveVoci[j], nuoveVoci[indiceVoce]];
+  nuovePortate[indicePortata] = Object.assign({}, portata, { voci: nuoveVoci });
+  try {
+    await MenuData.scriviPercorso('menuFissi/'+mfId+'/portate', nuovePortate);
+    mf.portate = nuovePortate;
+    disegnaGruppo('menufissi');
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
 async function aggiungiVoce(sectionId){
   const nomeIt = window.prompt('Nome della nuova voce (italiano):', '');
   if (nomeIt === null) return;
@@ -521,7 +950,7 @@ async function aggiungiVoce(sectionId){
   if (sez.tabella) nuovaVoce.prezzi = (sez.colonne||[]).map(()=>'');
   else nuovaVoce.prezzo = '';
   if (gruppoAttivo === 'piatti'){ nuovaVoce.giorniNonDisponibiliPranzo = null; nuovaVoce.allergeni = []; }
-  if (gruppoAttivo === 'vini' || gruppoAttivo === 'birre') nuovaVoce.scheda = { descrizione:{it:'',en:''} };
+  if (gruppoAttivo === 'vini' || gruppoAttivo === 'birre'){ nuovaVoce.scheda = { descrizione:{it:'',en:''} }; nuovaVoce.disponibile = true; }
   const nuovoOrdine = (sez.ordine || []).concat(itemId);
   try {
     await MenuData.aggiornaPercorsi({
@@ -530,21 +959,30 @@ async function aggiungiVoce(sectionId){
     });
     grezzo.voci[itemId] = nuovaVoce;
     sez.ordine = nuovoOrdine;
+    registraLog('Nuova voce creata', nomeIt + ' (' + NOMI_GRUPPO[gruppoAttivo] + ')');
     disegnaGruppo(gruppoAttivo);
   } catch(e){ window.alert('Errore: ' + e.message); }
 }
 
 async function eliminaVoce(sectionId, itemId){
-  if (!window.confirm('Eliminare questa voce? Non si può annullare.')) return;
   const sez = grezzo.sezioni[sectionId];
-  const nuovoOrdine = sez.ordine.filter(id => id !== itemId);
+  const voceOriginale = grezzo.voci[itemId];
+  const nomeVoce = (voceOriginale.nome && voceOriginale.nome.it) || itemId;
+  if (!window.confirm('Spostare "'+nomeVoce+'" nel cestino?\nPotrai ripristinarla dalla scheda "Manutenzione" finché non svuoti il cestino.')) return;
+  const posizione = sez.ordine.indexOf(itemId);
   try {
+    // Copia di sicurezza nel cestino PRIMA di rimuovere dai dati live (vedi eliminaSezione)
+    await spostaNelCestino({ tipo:'voce', gruppo:gruppoAttivo, id:itemId, nome:nomeVoce, dati:{ voce:voceOriginale, sectionId, posizione } });
+
+    const nuovoOrdine = sez.ordine.filter(id => id !== itemId);
     await MenuData.aggiornaPercorsi({
       ['voci/'+itemId]: null,
       ['sezioni/'+sectionId+'/ordine']: nuovoOrdine
     });
+
     delete grezzo.voci[itemId];
     sez.ordine = nuovoOrdine;
+    registraLog('Voce spostata nel cestino', nomeVoce + ' (' + NOMI_GRUPPO[gruppoAttivo] + ')');
     disegnaGruppo(gruppoAttivo);
   } catch(e){ window.alert('Errore: ' + e.message); }
 }
@@ -582,6 +1020,21 @@ async function caricaFotoSezione(sectionId, inputFile){
     inputFile.value = '';
   }
 }
+/* Blocca temporaneamente tutti i pulsanti azione dentro una "card"
+   (una sezione, o un menù a prezzo fisso) durante un'operazione che
+   dipende da una POSIZIONE numerica nell'array (foto, portate, voci di
+   portata) invece che da un id stabile: se un'altra eliminazione sulla
+   stessa lista partisse nel frattempo, la posizione catturata al click
+   diventerebbe sbagliata. Il ridisegno a operazione riuscita sostituisce
+   comunque tutto; sbloccaCard() serve solo per il caso di errore o
+   annullamento, quando il ridisegno non arriva. */
+function bloccaCard(el){
+  if (!el) return () => {};
+  const bottoni = Array.from(el.querySelectorAll('[data-azione]'));
+  bottoni.forEach(b => { b.disabled = true; });
+  return () => bottoni.forEach(b => { b.disabled = false; });
+}
+
 async function spostaFoto(sectionId, indice, dir){
   const sez = grezzo.sezioni[sectionId];
   const j = dir === 'su' ? indice-1 : indice+1;
@@ -596,13 +1049,14 @@ async function spostaFoto(sectionId, indice, dir){
 }
 async function eliminaFoto(sectionId, indice){
   if (!window.confirm('Rimuovere questa foto dalla sezione? (il file resta su Firebase Storage, va eliminato manualmente dalla console se non serve più)')) return;
+  const sblocca = bloccaCard(document.querySelector('[data-sezione="'+sectionId+'"]'));
   const sez = grezzo.sezioni[sectionId];
   sez.foto.imgs.splice(indice, 1);
   (sez.foto.didascalie||[]).splice(indice, 1);
   try {
     await MenuData.scriviPercorso('sezioni/'+sectionId+'/foto', sez.foto);
-    disegnaGruppo(gruppoAttivo);
-  } catch(e){ window.alert('Errore: ' + e.message); }
+    disegnaGruppo(gruppoAttivo); // sostituisce il DOM: rende sblocca() superfluo, ma innocuo
+  } catch(e){ window.alert('Errore: ' + e.message); sblocca(); }
 }
 
 /* ---------- FOTO SCHEDA TECNICA (vino/birra) ---------- */
@@ -742,8 +1196,207 @@ async function eseguiMigrazione(){
     await MenuData.scriviPercorso('', albero);
     grezzo = albero;
     stato.textContent = '✓ Importazione completata.';
+    registraLog('Importazione dati statici completata', '');
     disegnaGruppo(gruppoAttivo);
   } catch(e){
     stato.textContent = '✗ Errore: ' + e.message;
+  }
+}
+
+/* =========================================================
+   PANNELLO MANUTENZIONE — backup manuale, cestino, registro modifiche
+   ========================================================= */
+function formattaData(ms){
+  try { return new Date(ms).toLocaleString('it-IT', { dateStyle:'short', timeStyle:'short' }); }
+  catch(e){ return String(ms); }
+}
+
+async function disegnaManutenzione(){
+  const [cestino, log] = await Promise.all([leggiCestino(), leggiLog()]);
+  const vociCestino = Object.entries(cestino).sort((a,b)=>(b[1].quando||0)-(a[1].quando||0));
+  const vociLog = Object.entries(log).sort((a,b)=>(b[1].quando||0)-(a[1].quando||0)).slice(0,50);
+
+  contenitoreManutenzione.innerHTML = `
+    <div class="pannello">
+      <h2>Backup manuale</h2>
+      <p>Scarica una copia completa del menu attuale in un file: tienila da parte come sicurezza prima di modifiche importanti. Puoi ripristinarla in qualsiasi momento da qui, su questo o su un altro dispositivo.</p>
+      <button type="button" class="mg-bottone-secondario" data-azione="scarica-backup">⬇️ Scarica backup (JSON)</button>
+      <label class="mg-upload">⬆️ Ripristina da backup<input type="file" accept="application/json" data-azione="carica-backup" hidden></label>
+      <p id="mnt-stato-backup" class="mg-stato"></p>
+    </div>
+
+    <div class="pannello">
+      <h2>Cestino ${vociCestino.length ? '('+vociCestino.length+')' : ''}</h2>
+      <p class="mg-nota-mini">Le sezioni e le voci eliminate finiscono qui invece di sparire subito per sempre: puoi ripristinarle finché non svuoti il cestino.</p>
+      ${vociCestino.length ? '<button type="button" class="mg-elimina" data-azione="svuota-cestino">Svuota cestino definitivamente</button>' : ''}
+      <div class="mnt-lista">
+        ${vociCestino.length ? vociCestino.map(([id,v])=>htmlVoceCestino(id,v)).join('') : '<p class="vuoto-mini">Il cestino è vuoto.</p>'}
+      </div>
+    </div>
+
+    <div class="pannello">
+      <h2>Registro modifiche <span class="mg-nota-mini">(ultime 50)</span></h2>
+      <ul class="mnt-log-lista">
+        ${vociLog.length ? vociLog.map(([id,v])=>htmlRigaLog(v)).join('') : '<li class="vuoto-mini">Nessuna modifica registrata.</li>'}
+      </ul>
+    </div>
+  `;
+}
+
+function htmlVoceCestino(id, v){
+  const data = formattaData(v.quando);
+  const tipoLabel = v.tipo === 'sezione' ? 'Sezione' : (v.tipo === 'menufisso' ? 'Menù fisso' : 'Voce');
+  return `<div class="mnt-cestino-riga" data-cestino="${id}">
+    <div class="mnt-cestino-info">
+      <strong>${escHtml(v.nome)}</strong>
+      <span class="mg-nota-mini">${tipoLabel} · ${escHtml(NOMI_GRUPPO[v.gruppo]||v.gruppo)} · eliminata il ${data} da ${escHtml(v.da||'sconosciuto')}</span>
+    </div>
+    <div class="mnt-cestino-azioni">
+      <button type="button" class="mg-bottone-secondario" data-azione="ripristina-cestino">Ripristina</button>
+      <button type="button" class="mg-elimina" data-azione="elimina-cestino-singolo">Elimina definitivamente</button>
+    </div>
+  </div>`;
+}
+function htmlRigaLog(v){
+  const data = formattaData(v.quando);
+  return `<li><span class="mnt-log-quando">${data}</span> — <strong>${escHtml(v.chi)}</strong>: ${escHtml(v.azione)}${v.dettaglio ? ' — '+escHtml(v.dettaglio) : ''}</li>`;
+}
+
+let _listenerManutenzioneAttaccati = false;
+function attaccaListenerManutenzione(){
+  if (_listenerManutenzioneAttaccati) return;
+  _listenerManutenzioneAttaccati = true;
+  contenitoreManutenzione.addEventListener('click', gestisciClickManutenzione);
+  contenitoreManutenzione.addEventListener('change', gestisciChangeManutenzione);
+}
+async function gestisciClickManutenzione(e){
+  const btn = e.target.closest('[data-azione]');
+  if (!btn) return;
+  const azione = btn.dataset.azione;
+
+  if (azione === 'scarica-backup') return scaricaBackup();
+
+  if (azione === 'svuota-cestino') return svuotaCestino();
+
+  if (azione === 'ripristina-cestino'){
+    const riga = btn.closest('[data-cestino]');
+    const id = riga.dataset.cestino;
+    btn.disabled = true;
+    try {
+      const cestino = await leggiCestino();
+      const voce = cestino[id];
+      if (voce) await ripristinaDalCestino(id, voce); // gestisce già da sé errori e ridisegno
+      else { window.alert('Questo elemento non è più nel cestino (forse già ripristinato da un\'altra sessione).'); disegnaManutenzione(); }
+    } finally { btn.disabled = false; }
+    return;
+  }
+  if (azione === 'elimina-cestino-singolo'){
+    if (!window.confirm('Eliminare definitivamente questo elemento dal cestino? Non si può annullare (eventuali foto associate restano comunque su Storage).')) return;
+    const riga = btn.closest('[data-cestino]');
+    btn.disabled = true;
+    try {
+      await rimuoviDalCestino(riga.dataset.cestino);
+      disegnaManutenzione();
+    } catch(e){
+      window.alert('Errore nell\'eliminazione: ' + e.message);
+      btn.disabled = false;
+    }
+  }
+}
+function gestisciChangeManutenzione(e){
+  if (e.target.dataset.azione === 'carica-backup') caricaBackup(e.target);
+}
+
+/* ---- Ripristino dal cestino ---- */
+async function ripristinaDalCestino(pushId, voce){
+  try {
+    if (voce.tipo === 'sezione'){
+      const { sezione, voci } = voce.dati;
+      const patch = { ['sezioni/'+voce.id]: sezione };
+      Object.keys(voci||{}).forEach(id => { patch['voci/'+id] = voci[id]; });
+      const gruppoEsiste = grezzo.gruppi[voce.gruppo] || (grezzo.gruppi[voce.gruppo] = { ordine:[] });
+      const nuovoOrdine = (gruppoEsiste.ordine || []).concat(voce.id);
+      patch['gruppi/'+voce.gruppo+'/ordine'] = nuovoOrdine;
+      await MenuData.aggiornaPercorsi(patch);
+      grezzo.sezioni[voce.id] = sezione;
+      Object.keys(voci||{}).forEach(id => { grezzo.voci[id] = voci[id]; });
+      grezzo.gruppi[voce.gruppo].ordine = nuovoOrdine;
+      await rimuoviDalCestino(pushId);
+      registraLog('Sezione ripristinata dal cestino', voce.nome + ' (' + NOMI_GRUPPO[voce.gruppo] + ')');
+      window.alert('Sezione ripristinata in fondo all\'elenco "'+NOMI_GRUPPO[voce.gruppo]+'". Usa le frecce ▲▼ nella scheda "Gestisci menu" per riposizionarla.');
+    } else if (voce.tipo === 'menufisso'){
+      const { menuFisso } = voce.dati;
+      const nuovoOrdine = (grezzo.menuFissiOrdine || []).concat(voce.id);
+      await MenuData.aggiornaPercorsi({
+        ['menuFissi/'+voce.id]: menuFisso,
+        ['menuFissiOrdine']: nuovoOrdine
+      });
+      grezzo.menuFissi[voce.id] = menuFisso;
+      grezzo.menuFissiOrdine = nuovoOrdine;
+      await rimuoviDalCestino(pushId);
+      registraLog('Menù a prezzo fisso ripristinato dal cestino', voce.nome);
+      window.alert('Menù ripristinato in fondo all\'elenco. Usa le frecce ▲▼ nella scheda "Gestisci menu" → "Menù fissi" per riposizionarlo.');
+    } else {
+      const { voce: datiVoce, sectionId } = voce.dati;
+      if (!grezzo.sezioni[sectionId]){
+        window.alert('La sezione originale non esiste più (forse anch\'essa nel cestino): ripristina prima quella, poi riprova con questa voce.');
+        return;
+      }
+      const sez = grezzo.sezioni[sectionId];
+      const nuovoOrdine = (sez.ordine || []).concat(voce.id);
+      await MenuData.aggiornaPercorsi({
+        ['voci/'+voce.id]: datiVoce,
+        ['sezioni/'+sectionId+'/ordine']: nuovoOrdine
+      });
+      grezzo.voci[voce.id] = datiVoce;
+      sez.ordine = nuovoOrdine;
+      await rimuoviDalCestino(pushId);
+      registraLog('Voce ripristinata dal cestino', voce.nome + ' (' + NOMI_GRUPPO[voce.gruppo] + ')');
+    }
+    disegnaManutenzione();
+  } catch(e){ window.alert('Errore nel ripristino: ' + e.message); }
+}
+async function svuotaCestino(){
+  if (!window.confirm('Eliminare DEFINITIVAMENTE tutti gli elementi nel cestino? Non si può annullare (eventuali foto associate restano comunque su Firebase Storage, da rimuovere manualmente se non servono più).')) return;
+  try {
+    await dbRemove(dbRef(MenuData.db(), 'cestino'));
+    registraLog('Cestino svuotato', '');
+    disegnaManutenzione();
+  } catch(e){ window.alert('Errore: ' + e.message); }
+}
+
+/* ---- Backup: esportazione / importazione ---- */
+function scaricaBackup(){
+  const dati = JSON.stringify(grezzo, null, 2);
+  const blob = new Blob([dati], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const oggi = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = 'backup-menu-'+oggi+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  registraLog('Backup scaricato', '');
+}
+async function caricaBackup(inputFile){
+  const file = inputFile.files && inputFile.files[0];
+  if (!file) return;
+  const stato = document.getElementById('mnt-stato-backup');
+  try {
+    const testo = await file.text();
+    const dati = JSON.parse(testo);
+    if (!dati || typeof dati !== 'object' || !dati.sezioni || !dati.voci || !dati.gruppi){
+      throw new Error('il file non sembra un backup valido di questo menu.');
+    }
+    const conferma = window.prompt('Questo SOSTITUIRÀ interamente il menu attuale su Firebase con il contenuto del file caricato.\nPer confermare, scrivi qui sotto esattamente:\nRIPRISTINA');
+    if (conferma !== 'RIPRISTINA'){ stato.textContent = 'Ripristino annullato.'; return; }
+    stato.textContent = 'Ripristino in corso…';
+    await MenuData.scriviPercorso('', dati);
+    grezzo = dati;
+    stato.textContent = '✓ Backup ripristinato.';
+    registraLog('Backup ripristinato da file', file.name);
+  } catch(e){
+    stato.textContent = '✗ Errore: ' + e.message;
+  } finally {
+    inputFile.value = '';
   }
 }
