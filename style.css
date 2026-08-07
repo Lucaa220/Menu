@@ -314,6 +314,28 @@ button.bottone.allergeni:hover{background:rgba(122,31,43,.45);border-color:var(-
   border-radius:var(--raggio);border:1px solid rgba(200,164,100,.2);}
 .torna-inizio{margin-top:var(--spazio-m);text-align:center;width:100%}
 
+/* === Menù a prezzo fisso =================== */
+.menu-fisso-card{width:100%;margin-bottom:var(--spazio-l);padding:var(--spazio-m);
+  background:rgba(20,10,6,.55);border:1px solid rgba(200,164,100,.15);
+  border-radius:var(--raggio);backdrop-filter:blur(6px);
+  animation:fadeSezione .5s ease-out both;}
+.menu-fisso-testa{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;
+  margin:0 0 var(--spazio-s);padding-bottom:8px;border-bottom:1px solid var(--divisore);}
+.menu-fisso-testa h3{font-family:'Georgia',serif;font-weight:700;font-style:italic;
+  font-size:clamp(1.2rem,1.1rem + .5vw,1.55rem);color:var(--col-oro-chiaro);margin:0;letter-spacing:.3px;}
+.menu-fisso-prezzo{font-weight:700;font-size:var(--testo-sottotitolo);color:var(--col-oro-chiaro);
+  white-space:nowrap;font-variant-numeric:tabular-nums;}
+.menu-fisso-descrizione{color:var(--testo-muted);font-style:italic;font-size:var(--testo-piccolo);
+  margin:0 0 var(--spazio-s);}
+.menu-fisso-portata{margin-bottom:var(--spazio-s)}
+.menu-fisso-portata:last-of-type{margin-bottom:0}
+.menu-fisso-portata h4{margin:0 0 4px;font-size:var(--testo-piccolo);font-weight:700;
+  color:var(--testo-muted);text-transform:uppercase;letter-spacing:.06em;}
+.menu-fisso-portata ul{list-style:none;margin:0;padding:0}
+.menu-fisso-portata li{padding:3px 0;color:var(--testo);font-size:.98em}
+.menu-fisso-note{margin:var(--spazio-s) 0 0;padding-top:8px;border-top:1px dashed var(--divisore);
+  font-size:var(--testo-piccolo);font-style:italic;color:var(--testo-muted);}
+
 /* === Fotografie storytelling tra le sezioni =============== */
 .foto-sezione{
   position:relative;width:100%;margin:var(--spazio-l) 0;
@@ -449,6 +471,15 @@ button.bottone.allergeni:hover{background:rgba(122,31,43,.45);border-color:var(-
   .foto-sezione{opacity:1;transform:none}
 }
 
+/* === Skip link (accessibilità: salta alla schermata corrente) === */
+.salta-al-contenuto{
+  position:absolute;left:8px;top:-60px;z-index:1000;
+  background:var(--col-panna);color:var(--col-marrone-scuro);
+  padding:10px 18px;border-radius:8px;font-weight:700;text-decoration:none;
+  transition:top .15s ease;
+}
+.salta-al-contenuto:focus{top:8px}
+
 /* === Bottone area riservata (angolo schermo) =============== */
 .area-riservata{
   position:fixed;
@@ -494,3 +525,16 @@ body.admin .area-riservata{display:none}
 .scheletro-testo{color:var(--testo-muted);font-size:var(--testo-piccolo);margin:0}
 @keyframes scheletro-girare{ to{ transform:rotate(360deg); } }
 body.admin .scheletro-caricamento{display:none}
+
+/* === Footer con contatti/orari =============================== */
+.footer-sito{
+  width:100%;max-width:var(--larghezza-contenuto);margin:var(--spazio-l) auto var(--spazio-xl);
+  padding:var(--spazio-m) var(--spazio-s) 0;text-align:center;
+  border-top:1px solid var(--divisore);
+  color:var(--testo-muted);font-size:var(--testo-piccolo);
+}
+.footer-nome{margin:0 0 6px;font-style:italic;color:var(--col-oro-chiaro);font-size:var(--testo-sottotitolo)}
+.footer-riga{margin:2px 0}
+.footer-riga a{color:var(--testo-muted);text-decoration:none}
+.footer-riga a:hover{color:var(--col-oro-chiaro);text-decoration:underline}
+body.admin .footer-sito{display:none}
