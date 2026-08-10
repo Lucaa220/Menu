@@ -15,11 +15,12 @@
    quella salvata in cache.
    ========================================================= */
 
-const VERSIONE_CACHE = 'df-v1';
+const VERSIONE_CACHE = 'df-v2';
 
 const FILE_SHELL = [
   './',
   './index.html',
+  './admin.html',
   './style.css',
   './admin.css',
   './app.js',
@@ -30,6 +31,7 @@ const FILE_SHELL = [
   './firebase-config.js',
   './firebase-init.js',
   './menu-data.js',
+  './cloudinary-config.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
