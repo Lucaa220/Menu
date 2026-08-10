@@ -10,8 +10,6 @@
    struttura dati è definita in un solo posto.
    ========================================================= */
 
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
-  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
 import { ref as dbRef, get as dbGet, remove as dbRemove, push as dbPush }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
@@ -139,15 +137,22 @@ async function rimuoviDalCestino(pushId){
   await dbRemove(dbRef(database, 'cestino/'+pushId));
 }
 
-/* ---------- STORAGE: compressione lato client + upload ---------- */
-let _storage = null;
-function storage(){
-  if (_storage) return _storage;
-  const app = MenuData.app();
-  if (!app) return null;
-  try { _storage = getStorage(app); } catch(e){ console.warn('[admin-menu] Storage non disponibile:', e.message); }
-  return _storage;
-}
+/* ---------- CLOUDINARY: compressione lato client + upload ----------
+   Le foto NON passano più da Firebase Storage: quel servizio richiede,
+   dal 2026, il piano a pagamento Blaze (carta di credito) anche solo
+   per essere attivato, e in più — trattandosi di richieste HTTP dirette
+   al bucket — avrebbe comunque bisogno di una configurazione CORS
+   manuale una tantum per funzionare da un dominio esterno come GitHub
+   Pages. Cloudinary risolve entrambi i problemi: piano gratuito
+   permanente senza carta di credito, e gli upload "unsigned" sono
+   pensati apposta per essere chiamati direttamente dal browser (nessun
+   problema di CORS, nessun server serve).
+
+   Il resto del pannello (login, testi, prezzi, sezioni...) continua a
+   usare Firebase Realtime Database esattamente come prima: cambia solo
+   la destinazione delle foto. L'URL restituito da Cloudinary viene
+   comunque salvato dentro Firebase (sez.foto.imgs, voce.scheda.foto),
+   quindi app.js non ha bisogno di sapere da dove arriva l'immagine. */
 function comprimiImmagine(file, latoMax, qualita){
   latoMax = latoMax || 1600; qualita = qualita || 0.82;
   return new Promise((resolve, reject) => {
@@ -174,13 +179,75 @@ function comprimiImmagine(file, latoMax, qualita){
     img.src = url;
   });
 }
-async function caricaSuStorage(file, percorso, latoMax, qualita){
+async function caricaSuCloudinary(file, percorso, latoMax, qualita){
+  const cfg = window.CLOUDINARY_CONFIG;
+  if (!cfg || !cfg.cloudName || !cfg.uploadPreset
+      || cfg.cloudName.indexOf('INSERISCI_') === 0 || cfg.uploadPreset.indexOf('INSERISCI_') === 0){
+    throw new Error('Cloudinary non configurato: compila cloudinary-config.js con il tuo cloud name e upload preset (vedi le istruzioni scritte in quel file).');
+  }
   const blob = await comprimiImmagine(file, latoMax, qualita);
-  const st = storage();
-  if (!st) throw new Error('Firebase Storage non disponibile (vedi ISTRUZIONI-FIREBASE.md).');
-  const rif = storageRef(st, percorso);
-  await uploadBytes(rif, blob, { contentType:'image/jpeg' });
-  return await getDownloadURL(rif);
+
+  const form = new FormData();
+  form.append('file', blob, 'foto.jpg');
+  form.append('upload_preset', cfg.uploadPreset);
+  /* "percorso" (es. "menu-foto/sezioni/antipasti/1699999999") diventa il
+     public_id Cloudinary: definisce sia il nome del file sia, grazie
+     alle "/", la sua posizione nelle cartelle della media library —
+     stessa logica di prima con Firebase Storage.
+     NOTA: nei preset "Unsigned" Cloudinary non permette di sovrascrivere
+     un file esistente (per sicurezza: altrimenti chiunque potrebbe
+     rimpiazzare qualsiasi file indovinandone il nome). Per questo anche
+     il percorso delle foto scheda vino/birra include un timestamp:
+     ogni caricamento crea sempre un file nuovo, e quello sostituito
+     resta nella media library come file orfano — esattamente come già
+     succede oggi per le foto di sezione quando vengono rimosse — da
+     ripulire ogni tanto a mano se non serve più (vedi il messaggio di
+     conferma mostrato in quel momento). */
+  if (percorso) form.append('public_id', percorso.replace(/\.[a-z0-9]+$/i, ''));
+
+  let risposta;
+  try {
+    risposta = await fetch('https://api.cloudinary.com/v1_1/' + cfg.cloudName + '/image/upload', {
+      method: 'POST',
+      body: form
+    });
+  } catch(e){
+    throw new Error(erroreCaricamentoLeggibile({ message: e.message }));
+  }
+
+  if (!risposta.ok){
+    let dettaglio = 'HTTP ' + risposta.status;
+    try {
+      const corpo = await risposta.json();
+      if (corpo && corpo.error && corpo.error.message) dettaglio = corpo.error.message;
+    } catch(e){ /* risposta non-JSON: teniamo il codice HTTP */ }
+    throw new Error(erroreCaricamentoLeggibile({ status:risposta.status, message:dettaglio }));
+  }
+
+  const dati = await risposta.json();
+  if (!dati || !dati.secure_url) throw new Error('Cloudinary non ha restituito un URL valido per la foto caricata.');
+  return dati.secure_url;
+}
+
+/* Traduce un errore tecnico di caricamento Cloudinary in un messaggio
+   comprensibile per chi usa il pannello admin. I casi più comuni in
+   fase di primo utilizzo sono: preset non impostato su "Unsigned"
+   (Cloudinary risponde 400/401 con un messaggio che lo dice
+   esplicitamente), cloud name o nome preset sbagliati (400/404), o un
+   problema di rete lato utente (offline, connessione instabile). */
+function erroreCaricamentoLeggibile(e){
+  const testo = (e && e.message) || String(e);
+  const status = e && e.status;
+  if (/unsigned/i.test(testo)){
+    return 'Cloudinary ha rifiutato il caricamento: il preset indicato in cloudinary-config.js non è impostato su "Unsigned". Vai su Cloudinary → Impostazioni → Upload → Upload presets, apri il tuo preset e imposta "Signing Mode" su "Unsigned". Dettaglio tecnico: ' + testo;
+  }
+  if (status === 400 || status === 404){
+    return 'Cloudinary ha rifiutato il caricamento: controlla che cloudName e uploadPreset in cloudinary-config.js corrispondano esattamente ai valori mostrati nella tua Dashboard Cloudinary (maiuscole/minuscole comprese). Dettaglio tecnico: ' + testo;
+  }
+  if (/network|failed to fetch|load failed/i.test(testo)){
+    return 'Caricamento non riuscito per un problema di connessione: verifica la rete e riprova. Dettaglio tecnico: ' + testo;
+  }
+  return testo;
 }
 
 /* ---------- DISEGNO: STRUTTURA FISSA DEL PANNELLO ---------- */
@@ -1007,7 +1074,7 @@ async function caricaFotoSezione(sectionId, inputFile){
   statoEl.textContent = 'Caricamento in corso…';
   try {
     const percorso = 'menu-foto/sezioni/' + sectionId + '/' + Date.now() + '.jpg';
-    const url = await caricaSuStorage(file, percorso);
+    const url = await caricaSuCloudinary(file, percorso);
     const sez = grezzo.sezioni[sectionId];
     sez.foto = sez.foto || { imgs:[], didascalie:[] };
     sez.foto.imgs.push(url);
@@ -1048,7 +1115,7 @@ async function spostaFoto(sectionId, indice, dir){
   } catch(e){ window.alert('Errore: ' + e.message); }
 }
 async function eliminaFoto(sectionId, indice){
-  if (!window.confirm('Rimuovere questa foto dalla sezione? (il file resta su Firebase Storage, va eliminato manualmente dalla console se non serve più)')) return;
+  if (!window.confirm('Rimuovere questa foto dalla sezione? (il file resta su Cloudinary, va eliminato manualmente dalla Media Library se non serve più)')) return;
   const sblocca = bloccaCard(document.querySelector('[data-sezione="'+sectionId+'"]'));
   const sez = grezzo.sezioni[sectionId];
   sez.foto.imgs.splice(indice, 1);
@@ -1066,8 +1133,8 @@ async function caricaFotoScheda(itemId, inputFile){
   const statoEl = inputFile.closest('.mg-scheda-foto').querySelector('.mg-stato-upload');
   statoEl.textContent = 'Caricamento in corso…';
   try {
-    const percorso = 'menu-foto/schede/' + itemId + '.jpg'; // percorso fisso: sostituisce l'eventuale foto precedente
-    const url = await caricaSuStorage(file, percorso, 1200, 0.85);
+    const percorso = 'menu-foto/schede/' + itemId + '/' + Date.now() + '.jpg'; // ogni caricamento crea un file nuovo (gli unsigned preset Cloudinary non possono sovrascrivere)
+    const url = await caricaSuCloudinary(file, percorso, 1200, 0.85);
     const voce = grezzo.voci[itemId];
     voce.scheda = voce.scheda || {};
     voce.scheda.foto = url;
@@ -1357,7 +1424,7 @@ async function ripristinaDalCestino(pushId, voce){
   } catch(e){ window.alert('Errore nel ripristino: ' + e.message); }
 }
 async function svuotaCestino(){
-  if (!window.confirm('Eliminare DEFINITIVAMENTE tutti gli elementi nel cestino? Non si può annullare (eventuali foto associate restano comunque su Firebase Storage, da rimuovere manualmente se non servono più).')) return;
+  if (!window.confirm('Eliminare DEFINITIVAMENTE tutti gli elementi nel cestino? Non si può annullare (eventuali foto associate restano comunque su Cloudinary, da rimuovere manualmente se non servono più).')) return;
   try {
     await dbRemove(dbRef(MenuData.db(), 'cestino'));
     registraLog('Cestino svuotato', '');
