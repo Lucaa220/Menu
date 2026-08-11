@@ -15,7 +15,7 @@
    quella salvata in cache.
    ========================================================= */
 
-const VERSIONE_CACHE = 'df-v2';
+const VERSIONE_CACHE = 'df-v3';
 
 const FILE_SHELL = [
   './',
@@ -33,6 +33,7 @@ const FILE_SHELL = [
   './menu-data.js',
   './cloudinary-config.js',
   './manifest.json',
+  './logo-trattoria.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
