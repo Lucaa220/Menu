@@ -62,16 +62,21 @@ const IDS_FOTO_PER_TIPO = {
   vini:   ['vini'],
   birre:  ['birre']
 };
-function immaginePer(titolo, tipo){
+function immaginePer(titolo, tipo, sezId){
+  /* Quando i dati arrivano da Firebase, ogni sezione porta con sé un id
+     stabile (vedi menu-data.js): l'abbinamento con la sua eventuale foto
+     può quindi essere ESATTO, per id, invece che "indovinato" dal testo
+     del titolo. Questo evita un problema reale: un titolo può contenere
+     per intero quello di un'altra sezione (es. "Secondi" è contenuto in
+     "Secondi alla brace"), e la corrispondenza per parola chiave può
+     quindi assegnare per errore la foto della sezione sbagliata — con
+     l'effetto che la foto caricata per la sezione giusta non compare
+     mai. Per i dati statici di dati-foto.js, che non hanno un id di
+     sezione, resta necessaria la corrispondenza per parola chiave. */
+  if (window.MENU_ORIGINE_FIREBASE && sezId){
+    return immaginiSezioni.find(m => m.id === sezId) || null;
+  }
   const t = (titolo||"").toLowerCase();
-  /* Il filtro fisso IDS_FOTO_PER_TIPO serve solo ai dati statici di
-     dati-foto.js (parole chiave generiche, es. "vino" compare sia nella
-     cantina vini sia in "Vino della Casa" fra i piatti). Quando il menu
-     viene gestito da Firebase (menu-data.js), ogni voce di
-     immaginiSezioni si aggancia già a una sola sezione specifica
-     (le "chiavi" sono i titoli esatti di quella sezione), quindi il
-     filtro non serve e va disattivato per non nascondere le foto delle
-     sezioni aggiunte/rinominate dal pannello admin. */
   const permessi = (tipo && !window.MENU_ORIGINE_FIREBASE) ? IDS_FOTO_PER_TIPO[tipo] : null;
   return immaginiSezioni.find(m =>
     (!permessi || permessi.includes(m.id)) && m.chiavi.some(k => t.includes(k))
@@ -90,8 +95,8 @@ function _oraCorrente(){
 }
 /* Mappa il titolo di una sezione piatti nella chiave canonica
    (antipasti|primi|secondi|contorni|dessert). "brace/griglia" ricade in "secondi". */
-function _sezionePiattiCanonica(titolo){
-  const m = immaginePer(titolo, 'piatti');
+function _sezionePiattiCanonica(titolo, sezId){
+  const m = immaginePer(titolo, 'piatti', sezId);
   if (!m) return null;
   const id = m.id;
   if (id === 'secondi-brace') return 'secondi';
@@ -467,7 +472,7 @@ function mostraContenuto(tipo, daPopState){
 
   dati.sezioni.forEach(sez=>{
     // Inserisce la fotografia/carosello storytelling PRIMA della sezione (una volta per tipologia)
-    const map=immaginePer(sez.titolo, tipo);
+    const map=immaginePer(sez.titolo, tipo, sez.id);
     if(map && !immaginiUsate.has(map.id)){
       immaginiUsate.add(map.id);
       const didascalieLingua=(map.didascalie||[]).map(d=>d[linguaCorrente]||'');
@@ -478,7 +483,7 @@ function mostraContenuto(tipo, daPopState){
 
     /* ANALYTICS: sezione piatti renderizzata (una sola volta per tipo) */
     if (tipo==='piatti') {
-      const canon = _sezionePiattiCanonica(sez.titolo);
+      const canon = _sezionePiattiCanonica(sez.titolo, sez.id);
       if (canon && !sezioniPiattiTracciate.has(canon)) {
         sezioniPiattiTracciate.add(canon);
         _traccia({ ['sezioni_piatti/'+canon]: 1 });
