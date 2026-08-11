@@ -113,7 +113,7 @@ function costruisciDatiLegacy(grezzo){
       const ordineVoci = sez.ordine || [];
 
       ['it','en'].forEach(lingua=>{
-        const sezOut = { titolo: lingua==='it' ? titoloIt : titoloEn };
+        const sezOut = { id: sectionId, titolo: lingua==='it' ? titoloIt : titoloEn };
         if (sez.tabella){ sezOut.tabella = true; sezOut.colonne = sez.colonne || []; }
         sezOut.items = ordineVoci.map(itemId=>{
           const voce = vociDb[itemId];
